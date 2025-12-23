@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # 前台前端
+  frontend:
+    build: ./frontend
+    container_name: blog-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - backend
+    networks:
+      - blog-network
+    restart: unless-stopped
+
+  # 后台管理前端
+  admin:
+    build: ./admin
+    container_name: blog-admin
+    ports:
+      - "81:80"
+    volumes:
+      - ./admin/dist:/usr/share/nginx/html
+    depends_on:
+      - backend
+    networks:
+      - blog-network
+    restart: unless-stopped
+
+  # 后端服务
+  backend:
+    build: ./backend
+    container_name: blog-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=123456
+      - MYSQL_DB=blog
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your_jwt_secret_key_change_in_production
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - blog-network
+    restart: unless-stopped
+
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: blog-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=blog
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - blog-network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Redis缓存
+  redis:
+    image: redis:7.0-alpine
+    container_name: blog-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - blog-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+networks:
+  blog-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+
