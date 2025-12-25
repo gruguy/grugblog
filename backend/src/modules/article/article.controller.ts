@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   NotFoundException,
+  Request,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { ArticleService } from "./article.service";
@@ -53,6 +54,13 @@ export class ArticleController {
     return await this.articleService.getCategories();
   }
 
+  @Public()
+  @Get(":id")
+  @ApiOperation({ summary: "获取文章详情" })
+  async findOne(@Param("id") id: string) {
+    return this.articleService.findOne(+id);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post("categories")
   @ApiBearerAuth()
@@ -87,13 +95,6 @@ export class ArticleController {
     return await this.articleService.deleteCategory(+id);
   }
 
-  @Public()
-  @Get(":id(\d+)")
-  @ApiOperation({ summary: "获取文章详情" })
-  async findOne(@Param("id") id: string) {
-    return this.articleService.findOne(+id);
-  }
-
   @UseGuards(JwtAuthGuard)
   @Post()
   @ApiBearerAuth()
@@ -120,5 +121,46 @@ export class ArticleController {
   async remove(@Param("id") id: string) {
     await this.articleService.remove(+id);
     return { message: "删除成功" };
+  }
+
+  @Public()
+  @Post(":id/like")
+  @ApiOperation({ summary: "切换点赞状态" })
+  async toggleLike(@Param("id") id: string, @Request() req) {
+    // 允许匿名点赞，使用默认userId=0
+    const userId = req.user?.id || 0;
+    return await this.articleService.toggleLike(userId, +id);
+  }
+
+  @Public()
+  @Get(":id/like/status")
+  @ApiOperation({ summary: "检查点赞状态" })
+  async checkLikeStatus(@Param("id") id: string, @Request() req) {
+    // 允许匿名检查点赞状态，使用默认userId=0
+    const userId = req.user?.id || 0;
+    const isLiked = await this.articleService.checkLikeStatus(userId, +id);
+    return { isLiked };
+  }
+
+  @Public()
+  @Post(":id/collect")
+  @ApiOperation({ summary: "切换收藏状态" })
+  async toggleCollect(@Param("id") id: string, @Request() req) {
+    // 允许匿名收藏，使用默认userId=0
+    const userId = req.user?.id || 0;
+    return await this.articleService.toggleCollect(userId, +id);
+  }
+
+  @Public()
+  @Get(":id/collect/status")
+  @ApiOperation({ summary: "检查收藏状态" })
+  async checkCollectStatus(@Param("id") id: string, @Request() req) {
+    // 允许匿名检查收藏状态，使用默认userId=0
+    const userId = req.user?.id || 0;
+    const isCollected = await this.articleService.checkCollectStatus(
+      userId,
+      +id
+    );
+    return { isCollected };
   }
 }

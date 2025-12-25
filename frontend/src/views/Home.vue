@@ -16,13 +16,19 @@
     <!-- 活动日历 -->
     <section class="mb-12">
       <h2 class="text-2xl font-bold mb-6">我的活动日历</h2>
-      <ActivityCalendar
+      <GitHubStyleCalendar
         :data="activityStore.activityData"
+        :title="'我的GitHub风格活动日历'"
         :show-legend="true"
-        :show-month="true"
-        :show-week="true"
         @click="handleDateClick"
+        @yearChange="handleYearChange"
       />
+      <div class="mt-4">
+        <p>活动数据: {{ activityStore.activityData.length }} 条</p>
+        <pre v-if="activityStore.activityData.length > 0">{{
+          JSON.stringify(activityStore.activityData.slice(0, 5), null, 2)
+        }}</pre>
+      </div>
     </section>
 
     <!-- 三栏布局 -->
@@ -71,10 +77,17 @@
         <!-- 文章列表 -->
         <div class="space-y-6">
           <div
-            v-for="article in articles"
+            v-for="(article, index) in articles"
             :key="article.id"
-            class="bg-card rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow"
+            class="bg-card rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow relative"
           >
+            <!-- 置顶标签 -->
+            <div
+              v-if="index < 3"
+              class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full"
+            >
+              置顶
+            </div>
             <div class="p-4 md:p-6">
               <div class="flex flex-col md:flex-row gap-4">
                 <!-- 文章封面 -->
@@ -93,10 +106,21 @@
                   <h3
                     class="text-xl font-bold mb-2 hover:text-primary transition-colors"
                   >
-                    {{ article.title }}
+                    <router-link
+                      :to="`/article/${article.id}`"
+                      class="hover:text-primary transition-colors"
+                    >
+                      {{ article.title || `文章 ${article.id}` }}
+                    </router-link>
                   </h3>
                   <p class="text-muted-foreground mb-4 line-clamp-2">
-                    {{ article.summary }}
+                    {{
+                      article.summary ||
+                      article.content.replace(/<[^>]+>/g, "").substring(0, 50) +
+                        (article.content.replace(/<[^>]+>/g, "").length > 50
+                          ? "..."
+                          : "")
+                    }}
                   </p>
                   <div
                     class="flex items-center justify-between text-sm text-muted-foreground"
@@ -156,7 +180,12 @@
                 <h4
                   class="text-sm font-medium hover:text-primary transition-colors line-clamp-2"
                 >
-                  {{ article.title }}
+                  <router-link
+                    :to="`/article/${article.id}`"
+                    class="hover:text-primary transition-colors"
+                  >
+                    {{ article.title || `文章 ${article.id}` }}
+                  </router-link>
                 </h4>
               </div>
             </li>
@@ -200,7 +229,7 @@
 import { ref, onMounted, computed } from "vue";
 import MainLayout from "@/layouts/MainLayout.vue";
 import ArticleCard from "@/components/ArticleCard.vue";
-import ActivityCalendar from "@/components/ActivityCalendar.vue";
+import GitHubStyleCalendar from "@/components/GitHubStyleCalendar.vue";
 import { useContentStore } from "@/stores/contentStore";
 import { useActivityStore } from "@/stores/activityStore";
 import type { Article } from "@/types/content";
@@ -223,7 +252,7 @@ const recentUpdates = computed(() => {
     .slice(0, 5)
     .map((article, index) => ({
       id: index + 1,
-      content: `发布了新文章《${article.title}》`,
+      content: `发布了新文章《${article.title || `文章 ${article.id}`}》`,
       time: new Date(article.createdAt).toLocaleString(),
     }));
 });
@@ -235,36 +264,28 @@ const recommendedArticles = computed(() => {
     .slice(0, 3);
 });
 
-// 计算属性：当前分类的文章
+// 计算属性：当前分类的文章，先按时间排序，再按阅读量和点赞量的和排序
 const articles = computed(() => {
-  return contentStore.articles;
-});
-
-// 计算属性：总文章数量
-const totalArticlesCount = computed(() => {
-  return contentStore.articles.length;
-});
-
-// 计算属性：带文章数量的分类列表
-const categoriesWithCount = computed(() => {
-  // 获取所有文章
-  const allArticles = contentStore.articles;
-  // 创建分类ID到文章数量的映射
-  const categoryCountMap = new Map<number, number>();
-
-  // 统计每个分类的文章数量
-  allArticles.forEach((article) => {
-    if (article.categoryId) {
-      const currentCount = categoryCountMap.get(article.categoryId) || 0;
-      categoryCountMap.set(article.categoryId, currentCount + 1);
+  return [...contentStore.articles].sort((a, b) => {
+    // 首先按创建时间降序排序
+    const timeDiff =
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (timeDiff !== 0) {
+      return timeDiff;
     }
+    // 时间相同则按阅读量+点赞量的和降序排序
+    const totalA = (a.views || 0) + (a.likes || 0);
+    const totalB = (b.views || 0) + (b.likes || 0);
+    return totalB - totalA;
   });
+});
 
-  // 为每个分类添加文章数量
-  return contentStore.categories.map((category) => ({
-    ...category,
-    articleCount: categoryCountMap.get(category.id) || 0,
-  }));
+// 计算属性：总文章数量（使用独立的变量来存储，避免切换分类时变化）
+const totalArticlesCount = ref(0);
+
+// 计算属性：带文章数量的分类列表（直接使用后端返回的数据）
+const categoriesWithCount = computed(() => {
+  return contentStore.categories;
 });
 
 // 计算属性：作者榜数据（模拟）
@@ -278,32 +299,18 @@ const topAuthors = computed(() => {
   ];
 });
 
-// 选择分类
-const selectCategory = (categoryId: number | null) => {
-  selectedCategoryId.value = categoryId;
-  fetchArticlesByCategory();
-};
-
-// 根据分类获取文章
-const fetchArticlesByCategory = async () => {
-  try {
-    await contentStore.fetchArticles({
-      page: 1,
-      size: 10,
-      categoryId: selectedCategoryId.value || undefined,
-    });
-  } catch (error) {
-    console.error("获取文章失败:", error);
-  }
-};
-
 onMounted(async () => {
   try {
     // 获取文章分类
     await contentStore.fetchCategories();
 
     // 获取所有文章
-    await contentStore.fetchArticles({ page: 1, size: 10 });
+    const articlesResponse = await contentStore.fetchArticles({
+      page: 1,
+      size: 10,
+    });
+    // 初始化总文章数量
+    totalArticlesCount.value = articlesResponse.data?.total || 0;
 
     // 获取活动数据
     await activityStore.fetchActivityData();
@@ -312,8 +319,38 @@ onMounted(async () => {
   }
 });
 
+// 选择分类
+const selectCategory = async (categoryId: number | null) => {
+  selectedCategoryId.value = categoryId;
+  await fetchArticlesByCategory();
+};
+
+// 根据分类获取文章
+const fetchArticlesByCategory = async () => {
+  try {
+    // 获取当前分类的文章
+    const articlesResponse = await contentStore.fetchArticles({
+      page: 1,
+      size: 10,
+      categoryId: selectedCategoryId.value || undefined,
+    });
+
+    // 如果是全部文章，更新总文章数量
+    if (selectedCategoryId.value === null) {
+      totalArticlesCount.value = articlesResponse.data?.total || 0;
+    }
+  } catch (error) {
+    console.error("获取文章失败:", error);
+  }
+};
+
 // 处理日期点击事件
 const handleDateClick = (date: string, data: ActivityData | undefined) => {
   console.log("点击了日期:", date, data);
+};
+
+// 处理年份切换事件
+const handleYearChange = (year: number) => {
+  console.log("切换到年份:", year);
 };
 </script>

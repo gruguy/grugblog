@@ -21,16 +21,16 @@ export const getImageById = (id: number) => {
 export const createImage = (data: FormData) => {
   return request.post("/images", data, {
     headers: {
-      "Content-Type": "multipart/form-data"
-    }
+      "Content-Type": "multipart/form-data",
+    },
   });
 };
 
 export const updateImage = (id: number, data: FormData) => {
   return request.patch(`/images/${id}`, data, {
     headers: {
-      "Content-Type": "multipart/form-data"
-    }
+      "Content-Type": "multipart/form-data",
+    },
   });
 };
 

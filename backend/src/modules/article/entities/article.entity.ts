@@ -7,57 +7,56 @@ import {
   JoinTable,
   CreateDateColumn,
   UpdateDateColumn,
-} from 'typeorm'
-import { Category } from './category.entity'
-import { Tag } from './tag.entity'
+} from "typeorm";
+import { Category } from "./category.entity";
+import { Tag } from "./tag.entity";
 
-@Entity('article')
+@Entity("article")
 export class Article {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
   @Column()
-  title: string
+  title: string;
 
-  @Column({ type: 'text' })
-  content: string
+  @Column({ type: "text" })
+  content: string;
 
-  @Column({ type: 'text', nullable: true })
-  summary: string
+  @Column({ type: "text", nullable: true })
+  summary: string;
 
   @Column({ nullable: true })
-  cover: string
+  cover: string;
 
   @Column({ default: 0 })
-  views: number
+  views: number;
 
   @Column({ default: 0 })
-  likes: number
+  likes: number;
 
   @ManyToOne(() => Category, (category) => category.articles)
-  category: Category
+  category: Category;
 
   @Column()
-  categoryId: number
+  categoryId: number;
 
   @ManyToMany(() => Tag, (tag) => tag.articles)
   @JoinTable({
-    name: 'article_tag',
+    name: "article_tag",
     joinColumn: {
-      name: 'articleId',
-      referencedColumnName: 'id',
+      name: "articleId",
+      referencedColumnName: "id",
     },
     inverseJoinColumn: {
-      name: 'tagId',
-      referencedColumnName: 'id',
+      name: "tagId",
+      referencedColumnName: "id",
     },
   })
-  tags: Tag[]
+  tags: Tag[];
 
   @CreateDateColumn()
-  createdAt: Date
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date
+  updatedAt: Date;
 }
-

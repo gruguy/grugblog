@@ -14,9 +14,10 @@ export interface Article {
 }
 
 export interface Category {
-  id: number
-  name: string
-  description?: string
+  id: number;
+  name: string;
+  description?: string;
+  articleCount?: number;
 }
 
 export interface Tag {

@@ -8,5 +8,5 @@ export interface DashboardStats {
 }
 
 export const getDashboardStats = () => {
-  return request.get<DashboardStats>('/dashboard/stats');
+  return request.get<DashboardStats>("/dashboard/stats");
 };

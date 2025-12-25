@@ -21,16 +21,16 @@ export const getMusicById = (id: number) => {
 export const createMusic = (data: FormData) => {
   return request.post("/music", data, {
     headers: {
-      "Content-Type": "multipart/form-data"
-    }
+      "Content-Type": "multipart/form-data",
+    },
   });
 };
 
 export const updateMusic = (id: number, data: FormData) => {
   return request.patch(`/music/${id}`, data, {
     headers: {
-      "Content-Type": "multipart/form-data"
-    }
+      "Content-Type": "multipart/form-data",
+    },
   });
 };
 

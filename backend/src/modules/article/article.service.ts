@@ -4,6 +4,8 @@ import { Repository } from "typeorm";
 import { Article } from "./entities/article.entity";
 import { Category } from "./entities/category.entity";
 import { Tag } from "./entities/tag.entity";
+import { ArticleCollect } from "./entities/collect.entity";
+import { ArticleLike } from "./entities/like.entity";
 import { CreateArticleDto } from "./dto/create-article.dto";
 import { UpdateArticleDto } from "./dto/update-article.dto";
 import { RedisService } from "@/common/redis/redis.service";
@@ -17,6 +19,10 @@ export class ArticleService {
     private categoryRepository: Repository<Category>,
     @InjectRepository(Tag)
     private tagRepository: Repository<Tag>,
+    @InjectRepository(ArticleCollect)
+    private articleCollectRepository: Repository<ArticleCollect>,
+    @InjectRepository(ArticleLike)
+    private articleLikeRepository: Repository<ArticleLike>,
     private redisService: RedisService
   ) {}
 
@@ -98,12 +104,15 @@ export class ArticleService {
   }
 
   async findOne(id: number): Promise<Article> {
+    console.log(`查找文章ID: ${id}`);
+
     const article = await this.articleRepository.findOne({
       where: { id },
       relations: ["category", "tags"],
     });
 
     if (!article) {
+      console.log(`文章ID: ${id} 不存在`);
       throw new NotFoundException("文章不存在");
     }
 
@@ -155,32 +164,41 @@ export class ArticleService {
   }
 
   /**
-   * 获取所有文章分类
+   * 获取所有文章分类，包含文章数量
    */
   async getCategories() {
     const cacheKey = "articles:categories";
 
-    // 尝试从缓存获取，如果失败则直接从数据库查询
+    // 清除旧缓存，确保返回新数据
     try {
-      const cached = await this.redisService.get(cacheKey);
-
-      if (cached) {
-        return JSON.parse(cached);
-      }
+      await this.redisService.del(cacheKey);
+      console.log("已清除旧的分类缓存");
     } catch (error) {
-      console.error("Redis缓存获取失败:", error);
+      console.error("清除旧缓存失败:", error);
     }
 
+    // 直接从数据库查询，不使用缓存
     const categories = await this.categoryRepository.find({
       order: { id: "DESC" },
     });
 
-    // 尝试缓存结果，如果失败则忽略
+    // 统计每个分类的文章数量
+    for (const category of categories) {
+      // 使用TypeORM的count方法获取文章数量
+      const articleCount = await this.articleRepository.count({
+        where: { categoryId: category.id },
+      });
+      // 将articleCount添加到分类对象中
+      (category as any).articleCount = articleCount;
+    }
+
+    // 缓存新结果
     try {
       // 缓存24小时
       await this.redisService.set(cacheKey, JSON.stringify(categories), 86400);
+      console.log("已缓存新的分类数据");
     } catch (error) {
-      console.error("Redis缓存设置失败:", error);
+      console.error("缓存新数据失败:", error);
     }
 
     return categories;
@@ -281,22 +299,28 @@ export class ArticleService {
       activityMap.set(date, (activityMap.get(date) || 0) + 1);
     });
 
-    // 生成过去一年的所有日期数据
+    // 生成当前年份的所有日期数据
     const activityData = [];
     const today = new Date();
+    const currentYear = today.getFullYear();
 
-    // 生成过去一年的所有日期
-    for (let i = 365; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(today.getDate() - i);
-      const formattedDate = date.toISOString().split("T")[0];
-      const count = activityMap.get(formattedDate) || 0;
+    // 生成当前年份的所有日期（1月1日到12月31日）
+    for (let month = 0; month < 12; month++) {
+      // 计算当月天数
+      const daysInMonth = new Date(currentYear, month + 1, 0).getDate();
 
-      activityData.push({
-        date: formattedDate,
-        count,
-        description: count > 0 ? `${count} 篇文章` : "无文章",
-      });
+      // 生成当月每一天
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(currentYear, month, day);
+        const formattedDate = date.toISOString().split("T")[0];
+        const count = activityMap.get(formattedDate) || 0;
+
+        activityData.push({
+          date: formattedDate,
+          count,
+          description: count > 0 ? `${count} 篇文章` : "无文章",
+        });
+      }
     }
 
     // 尝试缓存结果，如果失败则忽略
@@ -312,5 +336,112 @@ export class ArticleService {
     }
 
     return activityData;
+  }
+
+  /**
+   * 切换点赞状态
+   */
+  async toggleLike(
+    userId: number,
+    articleId: number
+  ): Promise<{ isLiked: boolean; likes: number }> {
+    // 查找文章
+    const article = await this.articleRepository.findOne({
+      where: { id: articleId },
+    });
+    if (!article) {
+      throw new NotFoundException("文章不存在");
+    }
+
+    // 查找点赞记录
+    const like = await this.articleLikeRepository.findOne({
+      where: { userId, articleId },
+    });
+
+    let isLiked: boolean;
+
+    if (like) {
+      // 已点赞，取消点赞
+      await this.articleLikeRepository.remove(like);
+      article.likes = Math.max(0, article.likes - 1);
+      isLiked = false;
+    } else {
+      // 未点赞，添加点赞
+      await this.articleLikeRepository.save({
+        userId,
+        articleId,
+      });
+      article.likes += 1;
+      isLiked = true;
+    }
+
+    // 保存文章点赞数
+    await this.articleRepository.save(article);
+
+    // 清除缓存
+    await this.redisService.del(`articles:list:*`);
+
+    return { isLiked, likes: article.likes };
+  }
+
+  /**
+   * 检查用户是否已点赞
+   */
+  async checkLikeStatus(userId: number, articleId: number): Promise<boolean> {
+    const like = await this.articleLikeRepository.findOne({
+      where: { userId, articleId },
+    });
+    return !!like;
+  }
+
+  /**
+   * 切换收藏状态
+   */
+  async toggleCollect(
+    userId: number,
+    articleId: number
+  ): Promise<{ isCollected: boolean }> {
+    // 查找文章
+    const article = await this.articleRepository.findOne({
+      where: { id: articleId },
+    });
+    if (!article) {
+      throw new NotFoundException("文章不存在");
+    }
+
+    // 查找收藏记录
+    const collect = await this.articleCollectRepository.findOne({
+      where: { userId, articleId },
+    });
+
+    let isCollected: boolean;
+
+    if (collect) {
+      // 已收藏，取消收藏
+      await this.articleCollectRepository.remove(collect);
+      isCollected = false;
+    } else {
+      // 未收藏，添加收藏
+      await this.articleCollectRepository.save({
+        userId,
+        articleId,
+      });
+      isCollected = true;
+    }
+
+    return { isCollected };
+  }
+
+  /**
+   * 检查用户是否已收藏
+   */
+  async checkCollectStatus(
+    userId: number,
+    articleId: number
+  ): Promise<boolean> {
+    const collect = await this.articleCollectRepository.findOne({
+      where: { userId, articleId },
+    });
+    return !!collect;
   }
 }

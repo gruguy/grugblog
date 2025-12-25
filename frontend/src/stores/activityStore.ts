@@ -18,25 +18,51 @@ export const useActivityStore = defineStore("activity", () => {
 
     try {
       // 使用真实API请求
-      const res = await getActivityData();
+      let activityDataFromApi = [];
+      try {
+        const res = await getActivityData();
+        // 后端统一响应格式是 { code, message, data }，所以直接访问 res.data 获取活动数据
+        activityDataFromApi = res.data || [];
+      } catch (err) {
+        console.log("获取真实活动数据失败，使用模拟数据");
+        // 如果API请求失败，生成模拟数据
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        for (let month = 0; month < 12; month++) {
+          for (let day = 1; day <= 28; day++) {
+            activityDataFromApi.push({
+              date: `${currentYear}-${(month + 1)
+                .toString()
+                .padStart(2, "0")}-${day.toString().padStart(2, "0")}`,
+              count: Math.floor(Math.random() * 10),
+              description: "模拟活动数据",
+            });
+          }
+        }
+      }
 
-      // 后端统一响应格式是 { code, message, data }，所以直接访问 res.data 获取活动数据
-      const activityDataFromApi = res.data || [];
-
-      // 生成过去一年的所有日期数据
+      // 生成当前年份的所有日期数据
       const today = new Date();
+      const currentYear = today.getFullYear();
       const generatedData: ActivityData[] = [];
 
-      // 创建日期到活动数据的映射
+      // 创建日期到活动数据的映射，只保留当前年份的数据
       const activityMap = new Map<string, number>();
       activityDataFromApi.forEach((item) => {
-        activityMap.set(item.date, item.count);
+        if (item.date.startsWith(`${currentYear}-`)) {
+          activityMap.set(item.date, item.count);
+        }
       });
 
-      // 生成过去一年的所有日期数据
-      for (let i = 365; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(today.getDate() - i);
+      // 生成当前年份的所有日期数据
+      const startDate = new Date(currentYear, 0, 1); // 当年1月1日
+      const endDate = new Date(currentYear, 11, 31); // 当年12月31日
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      for (let i = 0; i <= diffDays; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
         const formattedDate = date.toISOString().split("T")[0];
         const count = activityMap.get(formattedDate) || 0;
 
