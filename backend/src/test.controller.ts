@@ -1,15 +1,10 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 
-@Controller()
-export class AppController {
+@Controller('test')
+export class TestController {
   @Get()
   getHello(): string {
     return 'Hello World!';
-  }
-
-  @Get('health')
-  getHealth(): any {
-    return { status: 'ok' };
   }
 
   @Post('register')

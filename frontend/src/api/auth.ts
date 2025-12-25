@@ -5,6 +5,12 @@ export interface LoginParams {
   password: string
 }
 
+export interface RegisterParams {
+  username: string
+  password: string
+  email: string
+}
+
 export interface LoginResponse {
   token: string
   user: {
@@ -18,6 +24,11 @@ export interface LoginResponse {
 // 登录
 export const login = (params: LoginParams) => {
   return request.post<LoginResponse>('/auth/login', params)
+}
+
+// 注册
+export const register = (params: RegisterParams) => {
+  return request.post<LoginResponse>('/auth/register', params)
 }
 
 // 获取用户信息

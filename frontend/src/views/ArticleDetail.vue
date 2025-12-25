@@ -27,7 +27,10 @@
         <div class="flex items-center space-x-4 text-muted-foreground">
           <span>{{ formatDate(contentStore.currentArticle.createdAt) }}</span>
           <span>{{ contentStore.currentArticle.views }} 阅读</span>
-          <span v-if="contentStore.currentArticle.category">
+          <span
+            v-if="contentStore.currentArticle.category"
+            :class="['px-2 py-0.5 rounded text-xs', getCategoryTagClass(contentStore.currentArticle.category.id)]"
+          >
             {{ contentStore.currentArticle.category.name }}
           </span>
         </div>
@@ -140,51 +143,11 @@
         <!-- 评论列表 -->
         <div class="space-y-4 mb-6">
           <!-- 评论项 -->
-          <div
+          <Comment
             v-for="comment in comments"
             :key="comment.id"
-            class="bg-muted p-4 rounded-lg"
-          >
-            <div class="flex items-center space-x-2 mb-2">
-              <span class="font-medium">{{ comment.author }}</span>
-              <span class="text-sm text-muted-foreground">{{
-                formatDate(comment.createdAt)
-              }}</span>
-              <button
-                @click="startReply(comment)"
-                class="ml-auto text-sm text-primary hover:underline"
-              >
-                回复
-              </button>
-            </div>
-            <p>{{ comment.content }}</p>
-
-            <!-- 回复列表 -->
-            <div
-              v-if="comment.replies && comment.replies.length > 0"
-              class="mt-4 ml-6 space-y-3"
-            >
-              <div
-                v-for="reply in comment.replies"
-                :key="reply.id"
-                class="bg-card p-3 rounded-lg border border-border"
-              >
-                <div class="flex items-center space-x-2 mb-1">
-                  <span class="font-medium text-sm">{{ reply.author }}</span>
-                  <span class="text-xs text-muted-foreground">{{
-                    formatDate(reply.createdAt)
-                  }}</span>
-                  <button
-                    @click="startReply(reply)"
-                    class="ml-auto text-xs text-primary hover:underline"
-                  >
-                    回复
-                  </button>
-                </div>
-                <p class="text-sm">{{ reply.content }}</p>
-              </div>
-            </div>
-          </div>
+            :comment="comment"
+          />
 
           <!-- 占位评论 -->
           <div
@@ -237,6 +200,7 @@ import { marked } from "marked";
 import MainLayout from "@/layouts/MainLayout.vue";
 import { useContentStore } from "@/stores/contentStore";
 import dayjs from "dayjs";
+import Comment from "@/components/Comment.vue";
 import {
   toggleArticleLike,
   checkArticleLikeStatus,
@@ -269,6 +233,24 @@ const replyToAuthor = ref("");
 
 const formatDate = (date: string) => {
   return dayjs(date).format("YYYY年MM月DD日 HH:mm:ss");
+};
+
+// 根据类别ID获取标签样式
+const getCategoryTagClass = (categoryId: number) => {
+  // 定义类别颜色映射
+  const categoryColors: Record<number, string> = {
+    1: 'bg-blue-100 text-blue-700',
+    2: 'bg-green-100 text-green-700',
+    3: 'bg-purple-100 text-purple-700',
+    4: 'bg-pink-100 text-pink-700',
+    5: 'bg-yellow-100 text-yellow-700',
+    6: 'bg-orange-100 text-orange-700',
+    7: 'bg-teal-100 text-teal-700',
+    8: 'bg-red-100 text-red-700',
+  };
+  
+  // 如果没有匹配的颜色，使用默认颜色
+  return categoryColors[categoryId] || 'bg-primary/10 text-primary';
 };
 
 // 开始回复
