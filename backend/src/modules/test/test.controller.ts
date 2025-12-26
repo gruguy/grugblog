@@ -1,12 +1,14 @@
-import { Controller, Get } from '@nestjs/common'
-import { ApiTags, ApiOperation } from '@nestjs/swagger'
+import { Controller, Get } from "@nestjs/common";
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
+import { Public } from "../../common/decorators/public.decorator";
 
-@ApiTags('测试')
-@Controller('test')
+@ApiTags("测试")
+@Controller("test")
 export class TestController {
-  @Get('hello')
-  @ApiOperation({ summary: '测试路由' })
+  @Public()
+  @Get("hello")
+  @ApiOperation({ summary: "测试路由" })
   async hello() {
-    return { message: 'Hello, World!' }
+    return { message: "Hello, World!" };
   }
 }

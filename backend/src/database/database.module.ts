@@ -5,18 +5,28 @@ import { ConfigService } from "@nestjs/config";
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
-      useFactory: (configService: ConfigService) => ({
-        type: "mysql",
-        host: configService.get("MYSQL_HOST", "localhost"),
-        port: configService.get<number>("MYSQL_PORT", 3306),
-        username: configService.get("MYSQL_USER", "root"),
-        password: configService.get("MYSQL_PASSWORD", "Gruguy31"),
-        database: configService.get("MYSQL_DB", "blog"),
-        entities: [__dirname + "/../**/*.entity{.ts,.js}"],
-        synchronize: false, // 禁用自动同步，手动管理表结构
-        logging: configService.get("NODE_ENV") === "development",
-        timezone: "+08:00",
-      }),
+      useFactory: (configService: ConfigService) => {
+        console.log("正在初始化数据库连接...");
+        const config = {
+          type: "mysql" as const,
+          host: configService.get("MYSQL_HOST", "localhost"),
+          port: configService.get<number>("MYSQL_PORT", 3306),
+          username: configService.get("MYSQL_USER", "root"),
+          password: configService.get("MYSQL_PASSWORD", "Gruguy31"),
+          database: configService.get("MYSQL_DB", "blog"),
+          entities: [__dirname + "/../**/*.entity{.ts,.js}"],
+          synchronize: false, // 禁用自动同步，手动管理表结构
+          logging: configService.get("NODE_ENV") === "development",
+          timezone: "+08:00",
+          // 增加连接超时和重试设置
+          connectTimeout: 10000,
+          acquireTimeout: 10000,
+          retryAttempts: 3,
+          retryDelay: 1000,
+        };
+        console.log("数据库配置:", { ...config, password: "******" });
+        return config;
+      },
       inject: [ConfigService],
     }),
   ],

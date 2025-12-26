@@ -2,7 +2,7 @@
   <div class="category-list">
     <el-card>
       <template #header>
-        <div class="flex items-center justify-between">
+        <div class="card-header">
           <span>文章分类管理</span>
           <el-button type="primary" @click="handleCreate">创建分类</el-button>
         </div>
@@ -159,6 +159,10 @@ onMounted(() => {
 
 <style scoped>
 .category-list {
-  padding: 20px;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>

@@ -13,16 +13,36 @@
       <el-table :data="articleList" style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="title" label="标题" />
-        <el-table-column prop="category.name" label="分类" width="120" />
+        <el-table-column label="分类" width="120">
+          <template #default="scope">
+            {{ scope.row.category?.name || "无分类" }}
+          </template>
+        </el-table-column>
         <el-table-column prop="views" label="阅读量" width="100" />
+        <el-table-column label="状态" width="120">
+          <template #default="scope">
+            <el-tag
+              :type="scope.row.status === 'published' ? 'success' : 'info'"
+            >
+              {{ scope.row.status === "published" ? "已发布" : "草稿" }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180">
           <template #default="scope">
             {{ formatDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180">
+        <el-table-column label="操作" width="280">
           <template #default="{ row }">
             <el-button size="small" @click="handleEdit(row.id)">编辑</el-button>
+            <el-button
+              size="small"
+              :type="row.status === 'published' ? 'warning' : 'success'"
+              @click="handleToggleStatus(row.id, row.status)"
+            >
+              {{ row.status === "published" ? "取消发布" : "发布" }}
+            </el-button>
             <el-button size="small" type="danger" @click="handleDelete(row.id)"
               >删除</el-button
             >
@@ -37,7 +57,11 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { getArticleList, deleteArticle } from "@/api/article";
+import {
+  getArticleList,
+  deleteArticle,
+  updateArticleStatus,
+} from "@/api/article";
 import dayjs from "dayjs";
 
 const router = useRouter();
@@ -52,6 +76,7 @@ const formatDate = (date: string) => {
 const loadArticleList = async () => {
   try {
     const res = await getArticleList();
+    console.log("文章列表API返回数据:", res);
     articleList.value = res.list || [];
   } catch (error) {
     console.error("加载文章列表失败:", error);
@@ -83,6 +108,20 @@ const handleDelete = async (id: number) => {
       ElMessage.error("删除文章失败");
     }
     // 用户取消操作不处理
+  }
+};
+
+// 切换文章状态
+const handleToggleStatus = async (id: number, currentStatus: string) => {
+  try {
+    const newStatus = currentStatus === "published" ? "draft" : "published";
+    await updateArticleStatus(id, newStatus);
+    ElMessage.success(newStatus === "published" ? "发布成功" : "已取消发布");
+    // 重新加载文章列表
+    await loadArticleList();
+  } catch (error) {
+    console.error("更新文章状态失败:", error);
+    ElMessage.error("更新文章状态失败");
   }
 };
 

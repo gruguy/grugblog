@@ -59,6 +59,14 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/editor",
+    name: "Editor",
+    component: () => import("@/views/Editor.vue"),
+    meta: {
+      title: "写文章",
+    },
+  },
+  {
     path: "/login",
     name: "Login",
     component: () => import("@/views/Login.vue"),

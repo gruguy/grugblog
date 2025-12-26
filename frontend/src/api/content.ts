@@ -16,43 +16,61 @@ export interface ArticleListResponse {
 }
 
 // 获取文章列表
-export const getArticles = (params?: ArticleListParams) => {
+export const getArticles = (
+  params?: ArticleListParams
+): Promise<ArticleListResponse> => {
   return request.get<ArticleListResponse>("/articles", { params });
 };
 
 // 获取文章详情
-export const getArticleById = (id: number) => {
+export const getArticleById = (id: number): Promise<Article> => {
   return request.get<Article>(`/articles/${id}`);
 };
 
 // 获取音乐列表
-export const getMusicList = () => {
+export const getMusicList = (): Promise<Music[]> => {
   return request.get<Music[]>("/music");
 };
 
 // 获取图片列表
-export const getImageList = (params?: { categoryId?: number }) => {
+export const getImageList = (params?: {
+  categoryId?: number;
+}): Promise<Image[]> => {
   return request.get<Image[]>("/images", { params });
 };
 
 // 获取视频列表
-export const getVideoList = () => {
+export const getVideoList = (): Promise<Video[]> => {
   return request.get<Video[]>("/videos");
 };
 
 // 获取文章活动数据
-export const getActivityData = () => {
+export const getActivityData = (
+  year?: number
+): Promise<
+  Array<{
+    date: string;
+    count: number;
+    description: string;
+  }>
+> => {
   return request.get<
     Array<{
       date: string;
       count: number;
       description: string;
     }>
-  >("/articles/activity");
+  >("/articles/activity", { params: year ? { year } : {} });
 };
 
 // 获取文章分类列表
-export const getCategories = () => {
+export const getCategories = (): Promise<
+  Array<{
+    id: number;
+    name: string;
+    description?: string;
+  }>
+> => {
   return request.get<
     Array<{
       id: number;
@@ -63,7 +81,12 @@ export const getCategories = () => {
 };
 
 // 切换点赞状态
-export const toggleArticleLike = (articleId: number) => {
+export const toggleArticleLike = (
+  articleId: number
+): Promise<{
+  isLiked: boolean;
+  likes: number;
+}> => {
   return request.post<{
     isLiked: boolean;
     likes: number;
@@ -71,37 +94,141 @@ export const toggleArticleLike = (articleId: number) => {
 };
 
 // 检查点赞状态
-export const checkArticleLikeStatus = (articleId: number) => {
+export const checkArticleLikeStatus = (
+  articleId: number
+): Promise<{
+  isLiked: boolean;
+}> => {
   return request.get<{
     isLiked: boolean;
   }>(`/articles/${articleId}/like/status`);
 };
 
 // 切换收藏状态
-export const toggleArticleCollect = (articleId: number) => {
+export const toggleArticleCollect = (
+  articleId: number
+): Promise<{
+  isCollected: boolean;
+}> => {
   return request.post<{
     isCollected: boolean;
   }>(`/articles/${articleId}/collect`);
 };
 
 // 检查收藏状态
-export const checkArticleCollectStatus = (articleId: number) => {
+export const checkArticleCollectStatus = (
+  articleId: number
+): Promise<{
+  isCollected: boolean;
+}> => {
   return request.get<{
     isCollected: boolean;
   }>(`/articles/${articleId}/collect/status`);
 };
 
 // 获取文章评论列表
-export const getArticleComments = (articleId: number) => {
+export const getArticleComments = (articleId: number): Promise<any[]> => {
   return request.get<any[]>(`/comments/article/${articleId}`);
 };
 
 // 创建评论
 export const createArticleComment = (data: {
-  content: string
-  author: string
-  articleId: number
-  parentId?: number | null
-}) => {
-  return request.post<any>(`/comments`, data)
+  content: string;
+  author: string;
+  articleId: number;
+  parentId?: number | null;
+}): Promise<any> => {
+  return request.post<any>(`/comments`, data);
+};
+
+// 保存文章草稿
+export const saveArticleDraft = (data: {
+  title: string;
+  content: string;
+  categoryId?: number;
+  tags?: string[];
+  status?: "draft";
+}): Promise<{
+  id: number;
+  title: string;
+  content: string;
+  status: "draft";
+  updatedAt: string;
+}> => {
+  return request.post<{
+    id: number;
+    title: string;
+    content: string;
+    status: "draft";
+    updatedAt: string;
+  }>(`/articles/draft`, data);
+};
+
+// 发表文章
+export const publishArticle = (data: {
+  title: string;
+  content: string;
+  categoryId?: number;
+  tags?: string[];
+  status?: "published";
+}): Promise<{
+  id: number;
+  title: string;
+  content: string;
+  status: "published";
+  createdAt: string;
+  updatedAt: string;
+}> => {
+  return request.post<{
+    id: number;
+    title: string;
+    content: string;
+    status: "published";
+    createdAt: string;
+    updatedAt: string;
+  }>(`/articles`, data);
+};
+
+// 获取用户草稿列表
+export const getUserDrafts = (): Promise<
+  Array<{
+    id: number;
+    title: string;
+    content: string;
+    status: "draft";
+    updatedAt: string;
+  }>
+> => {
+  return request.get<
+    Array<{
+      id: number;
+      title: string;
+      content: string;
+      status: "draft";
+      updatedAt: string;
+    }>
+  >(`/articles/drafts`);
+};
+
+// 获取草稿详情
+export const getDraftById = (
+  id: number
+): Promise<{
+  id: number;
+  title: string;
+  content: string;
+  categoryId?: number;
+  tags?: string[];
+  status: "draft";
+  updatedAt: string;
+}> => {
+  return request.get<{
+    id: number;
+    title: string;
+    content: string;
+    categoryId?: number;
+    tags?: string[];
+    status: "draft";
+    updatedAt: string;
+  }>(`/articles/drafts/${id}`);
 };

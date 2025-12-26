@@ -31,5 +31,10 @@ export class CreateArticleDto {
   @IsArray()
   @IsOptional()
   tagIds?: number[]
+
+  @ApiProperty({ description: '文章状态', enum: ['draft', 'published'], default: 'draft', required: false })
+  @IsString()
+  @IsOptional()
+  status?: string
 }
 

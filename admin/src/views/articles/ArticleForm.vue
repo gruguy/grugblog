@@ -41,7 +41,10 @@
           </div>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSubmit">保存</el-button>
+          <el-button type="primary" @click="handleSubmit('published')"
+            >发布</el-button
+          >
+          <el-button @click="handleSubmit('draft')">保存草稿</el-button>
           <el-button @click="$router.back()">取消</el-button>
         </el-form-item>
       </el-form>
@@ -157,16 +160,18 @@ const loadArticleDetail = async () => {
 };
 
 // 提交表单
-const handleSubmit = async () => {
+const handleSubmit = async (status: string) => {
   try {
+    const formData = { ...form.value, status };
+
     if (isEdit.value) {
       // 编辑文章
       const id = Number(route.params.id);
-      await updateArticle(id, form.value);
+      await updateArticle(id, formData);
       ElMessage.success("更新成功");
     } else {
       // 创建文章
-      await createArticle(form.value);
+      await createArticle(formData);
       ElMessage.success("创建成功");
     }
     // 跳转回文章列表

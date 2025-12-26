@@ -18,6 +18,8 @@ import { UpdateArticleDto } from "./dto/update-article.dto";
 import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
 import { Public } from "@/common/decorators/public.decorator";
 
+console.log("ArticleController - 正在加载...");
+
 @ApiTags("文章")
 @Controller("articles")
 export class ArticleController {
@@ -43,14 +45,16 @@ export class ArticleController {
   @Public()
   @Get("activity")
   @ApiOperation({ summary: "获取文章活动数据" })
-  async getActivityData() {
-    return await this.articleService.getActivityData();
+  async getActivityData(@Query("year") year?: string) {
+    const yearNumber = year ? parseInt(year) : undefined;
+    return await this.articleService.getActivityData(yearNumber);
   }
 
   @Public()
   @Get("categories")
   @ApiOperation({ summary: "获取文章分类列表" })
   async getCategories() {
+    console.log("categories endpoint called");
     return await this.articleService.getCategories();
   }
 
@@ -121,6 +125,19 @@ export class ArticleController {
   async remove(@Param("id") id: string) {
     await this.articleService.remove(+id);
     return { message: "删除成功" };
+  }
+
+  // 保留这个端点以保持API兼容性
+  @UseGuards(JwtAuthGuard)
+  @Patch(":id/status")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "更新文章状态" })
+  async updateStatus(
+    @Param("id") id: string,
+    @Body() body: { status: string }
+  ) {
+    const updateDto = { status: body.status } as UpdateArticleDto;
+    return this.articleService.update(+id, updateDto);
   }
 
   @Public()

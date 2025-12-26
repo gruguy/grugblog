@@ -9,12 +9,57 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   constructor(private configService: ConfigService) {}
 
   onModuleInit() {
-    this.client = new Redis({
-      host: this.configService.get("REDIS_HOST", "localhost"),
-      port: this.configService.get<number>("REDIS_PORT", 6379),
-      password: this.configService.get("REDIS_PASSWORD"),
-      db: this.configService.get<number>("REDIS_DB", 0),
-    });
+    // 使用异步方式初始化Redis连接，避免阻塞模块初始化
+    console.log("开始初始化Redis连接...");
+    const host = this.configService.get("REDIS_HOST", "localhost");
+    const port = this.configService.get<number>("REDIS_PORT", 6379);
+
+    try {
+      this.client = new Redis({
+        host,
+        port,
+        password: this.configService.get("REDIS_PASSWORD"),
+        db: this.configService.get<number>("REDIS_DB", 0),
+        // 禁用自动连接，手动控制连接
+        lazyConnect: true,
+        retryStrategy: (times) => {
+          // 重试策略：如果连接失败，记录错误但不阻止应用启动
+          console.error(
+            `Redis连接失败，第${times}次重试:`,
+            `host: ${host}, port: ${port}`
+          );
+          // 如果重试次数超过10次，停止重试
+          if (times > 10) {
+            console.error(
+              "Redis连接重试次数超过限制，应用将继续运行但不使用Redis缓存"
+            );
+            return null;
+          }
+          // 每次重试间隔增加1秒
+          return times * 1000;
+        },
+      });
+
+      // 监听连接错误
+      this.client.on("error", (error) => {
+        console.error("Redis连接错误:", error);
+      });
+
+      // 监听连接成功
+      this.client.on("connect", () => {
+        console.log("Redis连接成功");
+      });
+
+      // 手动连接，不阻塞模块初始化
+      this.client.connect().catch((error) => {
+        console.error("Redis手动连接失败:", error);
+      });
+
+      console.log("Redis客户端初始化完成，采用延迟连接模式");
+    } catch (error) {
+      console.error("Redis客户端创建失败:", error);
+      // 即使创建失败，也不抛出错误，允许应用继续运行
+    }
   }
 
   onModuleDestroy() {

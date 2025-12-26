@@ -17,16 +17,20 @@ const service: AxiosInstance = axios.create({
 
 service.interceptors.request.use(
   (config: AxiosRequestConfig) => {
+    console.log("请求配置:", config);
     const userStore = useUserStore();
     const token = userStore.token || localStorage.getItem("token");
+    console.log("当前Token:", token);
 
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("添加Authorization头:", config.headers.Authorization);
     }
 
     return config;
   },
   (error) => {
+    console.error("请求错误:", error);
     return Promise.reject(error);
   }
 );
@@ -35,18 +39,24 @@ service.interceptors.response.use(
   (response: AxiosResponse) => {
     const res = response.data;
 
-    if (res.code !== undefined && res.code !== 200) {
-      if (res.code === 401) {
-        const userStore = useUserStore();
-        userStore.userLogout();
-        router.push("/login");
+    // 处理有code字段的响应（如activityData方法）
+    if (res.code !== undefined) {
+      if (res.code !== 200) {
+        if (res.code === 401) {
+          const userStore = useUserStore();
+          userStore.userLogout();
+          router.push("/login");
+        }
+
+        ElMessage.error(res.message || "请求失败");
+        return Promise.reject(new Error(res.message || "请求失败"));
       }
 
-      ElMessage.error(res.message || "请求失败");
-      return Promise.reject(new Error(res.message || "请求失败"));
+      return res.data;
     }
 
-    return res.data;
+    // 处理没有code字段的响应（如findAll方法）
+    return res;
   },
   (error) => {
     if (error.response) {

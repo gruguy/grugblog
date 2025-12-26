@@ -12,7 +12,7 @@ export const useActivityStore = defineStore("activity", () => {
   const error = ref<string | null>(null);
 
   // 获取活动数据
-  const fetchActivityData = async () => {
+  const fetchActivityData = async (year?: number) => {
     isLoading.value = true;
     error.value = null;
 
@@ -20,18 +20,17 @@ export const useActivityStore = defineStore("activity", () => {
       // 使用真实API请求
       let activityDataFromApi = [];
       try {
-        const res = await getActivityData();
+        const res = await getActivityData(year);
         // 后端统一响应格式是 { code, message, data }，所以直接访问 res.data 获取活动数据
         activityDataFromApi = res.data || [];
       } catch (err) {
         console.log("获取真实活动数据失败，使用模拟数据");
         // 如果API请求失败，生成模拟数据
-        const today = new Date();
-        const currentYear = today.getFullYear();
+        const targetYear = year || new Date().getFullYear();
         for (let month = 0; month < 12; month++) {
           for (let day = 1; day <= 28; day++) {
             activityDataFromApi.push({
-              date: `${currentYear}-${(month + 1)
+              date: `${targetYear}-${(month + 1)
                 .toString()
                 .padStart(2, "0")}-${day.toString().padStart(2, "0")}`,
               count: Math.floor(Math.random() * 10),
@@ -41,22 +40,22 @@ export const useActivityStore = defineStore("activity", () => {
         }
       }
 
-      // 生成当前年份的所有日期数据
+      // 生成指定年份的所有日期数据
       const today = new Date();
-      const currentYear = today.getFullYear();
+      const targetYear = year || today.getFullYear();
       const generatedData: ActivityData[] = [];
 
-      // 创建日期到活动数据的映射，只保留当前年份的数据
+      // 创建日期到活动数据的映射，只保留指定年份的数据
       const activityMap = new Map<string, number>();
       activityDataFromApi.forEach((item) => {
-        if (item.date.startsWith(`${currentYear}-`)) {
+        if (item.date.startsWith(`${targetYear}-`)) {
           activityMap.set(item.date, item.count);
         }
       });
 
-      // 生成当前年份的所有日期数据
-      const startDate = new Date(currentYear, 0, 1); // 当年1月1日
-      const endDate = new Date(currentYear, 11, 31); // 当年12月31日
+      // 生成指定年份的所有日期数据
+      const startDate = new Date(targetYear, 0, 1); // 当年1月1日
+      const endDate = new Date(targetYear, 11, 31); // 当年12月31日
       const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 

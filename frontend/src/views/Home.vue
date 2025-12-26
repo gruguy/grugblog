@@ -15,10 +15,10 @@
 
     <!-- 活动日历 -->
     <section class="mb-12">
-      <h2 class="text-2xl font-bold mb-6">我的活动日历</h2>
+      <!-- <h2 class="text-2xl font-bold mb-6">我的活动日历</h2> -->
       <GitHubStyleCalendar
         :data="activityStore.activityData"
-        :title="'我的GitHub风格活动日历'"
+        :title="'我的活动日历'"
         :show-legend="true"
         @click="handleDateClick"
         @yearChange="handleYearChange"
@@ -67,9 +67,11 @@
       </aside>
 
       <!-- 中间：文章列表 -->
-      <main class="lg:col-span-7">
+      <main
+        class="lg:col-span-7 h-screen lg:h-[calc(100vh-250px)] overflow-hidden"
+      >
         <!-- 文章列表 -->
-        <div class="space-y-6">
+        <div class="space-y-6 overflow-y-auto max-h-full p-1">
           <div
             v-for="(article, index) in articles"
             :key="article.id"
@@ -122,14 +124,26 @@
                     <div class="flex items-center space-x-4">
                       <span>{{ article.author || "匿名" }}</span>
                       <span class="flex items-center gap-1">
-                        <svg class="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                        <svg
+                          class="w-4 h-4 text-muted-foreground"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+                          />
                         </svg>
                         {{ article.views }} 阅读
                       </span>
                       <span class="flex items-center gap-1">
-                        <svg class="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        <svg
+                          class="w-4 h-4 text-muted-foreground"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                          />
                         </svg>
                         {{ article.likes || 0 }} 点赞
                       </span>
@@ -137,7 +151,10 @@
                     <div class="flex items-center space-x-2">
                       <span
                         v-if="article.category"
-                        :class="['px-2 py-0.5 rounded text-xs', getCategoryTagClass(article.category.id)]"
+                        :class="[
+                          'px-2 py-0.5 rounded text-xs',
+                          getCategoryTagClass(article.category.id),
+                        ]"
                       >
                         {{ article.category.name }}
                       </span>
@@ -354,25 +371,26 @@ const handleDateClick = (date: string, data: ActivityData | undefined) => {
 };
 
 // 处理年份切换事件
-const handleYearChange = (year: number) => {
+const handleYearChange = async (year: number) => {
   console.log("切换到年份:", year);
+  await activityStore.fetchActivityData(year);
 };
 
 // 根据类别ID获取标签样式
 const getCategoryTagClass = (categoryId: number) => {
   // 定义类别颜色映射
   const categoryColors: Record<number, string> = {
-    1: 'bg-blue-100 text-blue-700',
-    2: 'bg-green-100 text-green-700',
-    3: 'bg-purple-100 text-purple-700',
-    4: 'bg-pink-100 text-pink-700',
-    5: 'bg-yellow-100 text-yellow-700',
-    6: 'bg-orange-100 text-orange-700',
-    7: 'bg-teal-100 text-teal-700',
-    8: 'bg-red-100 text-red-700',
+    1: "bg-blue-100 text-blue-700",
+    2: "bg-green-100 text-green-700",
+    3: "bg-purple-100 text-purple-700",
+    4: "bg-pink-100 text-pink-700",
+    5: "bg-yellow-100 text-yellow-700",
+    6: "bg-orange-100 text-orange-700",
+    7: "bg-teal-100 text-teal-700",
+    8: "bg-red-100 text-red-700",
   };
-  
+
   // 如果没有匹配的颜色，使用默认颜色
-  return categoryColors[categoryId] || 'bg-primary/10 text-primary';
+  return categoryColors[categoryId] || "bg-primary/10 text-primary";
 };
 </script>

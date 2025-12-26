@@ -29,7 +29,10 @@
           <span>{{ contentStore.currentArticle.views }} 阅读</span>
           <span
             v-if="contentStore.currentArticle.category"
-            :class="['px-2 py-0.5 rounded text-xs', getCategoryTagClass(contentStore.currentArticle.category.id)]"
+            :class="[
+              'px-2 py-0.5 rounded text-xs',
+              getCategoryTagClass(contentStore.currentArticle.category.id),
+            ]"
           >
             {{ contentStore.currentArticle.category.name }}
           </span>
@@ -147,6 +150,7 @@
             v-for="comment in comments"
             :key="comment.id"
             :comment="comment"
+            :on-reply="startReply"
           />
 
           <!-- 占位评论 -->
@@ -231,26 +235,28 @@ const commentContent = ref("");
 const replyToCommentId = ref<number | null>(null);
 const replyToAuthor = ref("");
 
+// 格式化日期为相对时间
 const formatDate = (date: string) => {
-  return dayjs(date).format("YYYY年MM月DD日 HH:mm:ss");
+  const now = dayjs(date);
+  return now.format("YYYY年MM月DD日");
 };
 
 // 根据类别ID获取标签样式
 const getCategoryTagClass = (categoryId: number) => {
   // 定义类别颜色映射
   const categoryColors: Record<number, string> = {
-    1: 'bg-blue-100 text-blue-700',
-    2: 'bg-green-100 text-green-700',
-    3: 'bg-purple-100 text-purple-700',
-    4: 'bg-pink-100 text-pink-700',
-    5: 'bg-yellow-100 text-yellow-700',
-    6: 'bg-orange-100 text-orange-700',
-    7: 'bg-teal-100 text-teal-700',
-    8: 'bg-red-100 text-red-700',
+    1: "bg-blue-100 text-blue-700",
+    2: "bg-green-100 text-green-700",
+    3: "bg-purple-100 text-purple-700",
+    4: "bg-pink-100 text-pink-700",
+    5: "bg-yellow-100 text-yellow-700",
+    6: "bg-orange-100 text-orange-700",
+    7: "bg-teal-100 text-teal-700",
+    8: "bg-red-100 text-red-700",
   };
-  
+
   // 如果没有匹配的颜色，使用默认颜色
-  return categoryColors[categoryId] || 'bg-primary/10 text-primary';
+  return categoryColors[categoryId] || "bg-primary/10 text-primary";
 };
 
 // 开始回复
@@ -271,10 +277,19 @@ const cancelReply = () => {
 const toggleLike = async () => {
   try {
     const articleId = parseInt(route.params.id as string);
+    console.log("Calling toggleArticleLike with articleId:", articleId);
     const response = await toggleArticleLike(articleId);
-    liked.value = response.data.isLiked;
-    if (contentStore.currentArticle) {
-      contentStore.currentArticle.likes = response.data.likes;
+    console.log("toggleArticleLike response:", response);
+    // 后端直接返回点赞状态，而不是包装在data字段中
+    if (response && response.isLiked !== undefined) {
+      liked.value = response.isLiked;
+    }
+    if (
+      contentStore.currentArticle &&
+      response &&
+      response.likes !== undefined
+    ) {
+      contentStore.currentArticle.likes = response.likes;
     }
   } catch (error) {
     console.error("点赞失败:", error);
@@ -285,8 +300,13 @@ const toggleLike = async () => {
 const toggleCollect = async () => {
   try {
     const articleId = parseInt(route.params.id as string);
+    console.log("Calling toggleArticleCollect with articleId:", articleId);
     const response = await toggleArticleCollect(articleId);
-    collected.value = response.data.isCollected;
+    console.log("toggleArticleCollect response:", response);
+    // 后端直接返回收藏状态，而不是包装在data字段中
+    if (response && response.isCollected !== undefined) {
+      collected.value = response.isCollected;
+    }
   } catch (error) {
     console.error("收藏失败:", error);
   }
@@ -349,7 +369,8 @@ const submitComment = async () => {
             if (!comment.replies) {
               comment.replies = [];
             }
-            comment.replies.push(response.data);
+            // 后端直接返回评论数据，而不是包装在data字段中
+            comment.replies.push(response);
             return true;
           }
           if (comment.replies && addReplyToParent(comment.replies)) {
@@ -362,7 +383,8 @@ const submitComment = async () => {
       addReplyToParent(comments.value);
     } else {
       // 是新评论，直接添加到评论列表
-      comments.value.unshift(response.data);
+      // 后端直接返回评论数据，而不是包装在data字段中
+      comments.value.unshift(response);
     }
 
     // 重置评论表单
@@ -379,11 +401,24 @@ onMounted(async () => {
 
     // 检查点赞和收藏状态
     try {
+      console.log("Calling checkArticleLikeStatus with articleId:", articleId);
       const likeStatus = await checkArticleLikeStatus(articleId);
-      liked.value = likeStatus.data.isLiked;
+      console.log("checkArticleLikeStatus response:", likeStatus);
+      // 后端直接返回点赞状态，而不是包装在data字段中
+      if (likeStatus && likeStatus.isLiked !== undefined) {
+        liked.value = likeStatus.isLiked;
+      }
 
+      console.log(
+        "Calling checkArticleCollectStatus with articleId:",
+        articleId
+      );
       const collectStatus = await checkArticleCollectStatus(articleId);
-      collected.value = collectStatus.data.isCollected;
+      console.log("checkArticleCollectStatus response:", collectStatus);
+      // 后端直接返回收藏状态，而不是包装在data字段中
+      if (collectStatus && collectStatus.isCollected !== undefined) {
+        collected.value = collectStatus.isCollected;
+      }
     } catch (error) {
       console.error("检查点赞收藏状态失败:", error);
     }
@@ -391,7 +426,8 @@ onMounted(async () => {
     // 调用API获取评论列表
     try {
       const response = await getArticleComments(articleId);
-      comments.value = response.data || [];
+      // 后端直接返回评论数据，而不是包装在data字段中
+      comments.value = response || [];
     } catch (error) {
       console.error("获取评论列表失败:", error);
       comments.value = [];

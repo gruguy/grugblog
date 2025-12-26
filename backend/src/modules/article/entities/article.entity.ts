@@ -59,4 +59,7 @@ export class Article {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ default: "draft" })
+  status: string;
 }

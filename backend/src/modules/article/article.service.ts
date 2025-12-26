@@ -10,6 +10,8 @@ import { CreateArticleDto } from "./dto/create-article.dto";
 import { UpdateArticleDto } from "./dto/update-article.dto";
 import { RedisService } from "@/common/redis/redis.service";
 
+console.log("ArticleService - 正在加载...");
+
 @Injectable()
 export class ArticleService {
   constructor(
@@ -118,7 +120,8 @@ export class ArticleService {
 
     // 增加访问量
     article.views += 1;
-    await this.articleRepository.save(article);
+    // 保存时只更新views字段，避免categoryId被设置为null
+    await this.articleRepository.update(id, { views: article.views });
 
     return article;
   }
@@ -127,30 +130,54 @@ export class ArticleService {
     id: number,
     updateArticleDto: UpdateArticleDto
   ): Promise<Article> {
-    const article = await this.findOne(id);
+    // 构建要更新的字段对象
+    const updateFields: any = {};
 
-    Object.assign(article, updateArticleDto);
-
-    if (updateArticleDto.categoryId) {
-      article.category = await this.categoryRepository.findOne({
-        where: { id: updateArticleDto.categoryId },
-      });
+    if (updateArticleDto.title !== undefined) {
+      updateFields.title = updateArticleDto.title;
+    }
+    if (updateArticleDto.content !== undefined) {
+      updateFields.content = updateArticleDto.content;
+    }
+    if (updateArticleDto.summary !== undefined) {
+      updateFields.summary = updateArticleDto.summary;
+    }
+    if (updateArticleDto.cover !== undefined) {
+      updateFields.cover = updateArticleDto.cover;
+    }
+    if (updateArticleDto.status !== undefined) {
+      updateFields.status = updateArticleDto.status;
+    }
+    if (updateArticleDto.categoryId !== undefined) {
+      updateFields.categoryId = updateArticleDto.categoryId;
     }
 
+    // 只更新提供的字段
+    if (Object.keys(updateFields).length > 0) {
+      await this.articleRepository.update(id, updateFields);
+    }
+
+    // 处理tags关系
     if (updateArticleDto.tagIds) {
-      article.tags = await this.tagRepository.find({
-        where: updateArticleDto.tagIds.map((id) => ({ id })),
+      const article = await this.articleRepository.findOne({
+        where: { id },
+        relations: ["tags"],
       });
+      if (article) {
+        article.tags = await this.tagRepository.find({
+          where: updateArticleDto.tagIds.map((id) => ({ id })),
+        });
+        await this.articleRepository.save(article);
+      }
     }
-
-    const updatedArticle = await this.articleRepository.save(article);
 
     // 清除缓存
     await this.redisService.del("articles:list:*");
     await this.redisService.del(`article:${id}`);
     await this.redisService.del("articles:activity");
 
-    return updatedArticle;
+    // 返回更新后的文章
+    return this.findOne(id);
   }
 
   async remove(id: number): Promise<void> {
@@ -271,8 +298,9 @@ export class ArticleService {
   /**
    * 获取文章活动数据，按日期分组
    */
-  async getActivityData() {
-    const cacheKey = "articles:activity";
+  async getActivityData(year?: number) {
+    const targetYear = year || new Date().getFullYear();
+    const cacheKey = `articles:activity_v2:${targetYear}`;
 
     // 尝试从缓存获取，如果失败则直接从数据库查询
     try {
@@ -299,19 +327,17 @@ export class ArticleService {
       activityMap.set(date, (activityMap.get(date) || 0) + 1);
     });
 
-    // 生成当前年份的所有日期数据
+    // 生成指定年份的所有日期数据
     const activityData = [];
-    const today = new Date();
-    const currentYear = today.getFullYear();
 
-    // 生成当前年份的所有日期（1月1日到12月31日）
+    // 生成指定年份的所有日期（1月1日到12月31日）
     for (let month = 0; month < 12; month++) {
       // 计算当月天数
-      const daysInMonth = new Date(currentYear, month + 1, 0).getDate();
+      const daysInMonth = new Date(targetYear, month + 1, 0).getDate();
 
       // 生成当月每一天
       for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(currentYear, month, day);
+        const date = new Date(targetYear, month, day);
         const formattedDate = date.toISOString().split("T")[0];
         const count = activityMap.get(formattedDate) || 0;
 
@@ -323,19 +349,23 @@ export class ArticleService {
       }
     }
 
+    // 构建统一响应格式
+    const response = {
+      code: 200,
+      message: "获取活动数据成功",
+      data: activityData,
+    };
+
     // 尝试缓存结果，如果失败则忽略
     try {
       // 缓存12小时
-      await this.redisService.set(
-        cacheKey,
-        JSON.stringify(activityData),
-        43200
-      );
+      await this.redisService.set(cacheKey, JSON.stringify(response), 43200);
     } catch (error) {
       console.error("Redis缓存设置失败:", error);
     }
 
-    return activityData;
+    // 返回统一的响应格式
+    return response;
   }
 
   /**

@@ -5,6 +5,7 @@ export interface ArticleForm {
   title: string;
   categoryId: number;
   content: string;
+  status?: string;
 }
 
 export interface CategoryForm {
@@ -29,8 +30,31 @@ export const deleteArticle = (id: number) => {
   return request.delete(`/articles/${id}`);
 };
 
-export const getArticleList = (params?: any) => {
+export interface ArticleListItem {
+  id: number;
+  title: string;
+  category: { id: number; name: string } | null;
+  content: string;
+  views: number;
+  likes: number;
+  createdAt: string;
+  updatedAt: string;
+  status: string;
+}
+
+export interface ArticleListResponse {
+  list: ArticleListItem[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+export const getArticleList = (params?: any): Promise<ArticleListResponse> => {
   return request.get("/articles", { params });
+};
+
+export const updateArticleStatus = (id: number, status: string) => {
+  return request.patch(`/articles/${id}`, { status });
 };
 
 // 分类相关API

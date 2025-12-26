@@ -42,7 +42,8 @@ export const useContentStore = defineStore("content", () => {
     articleLoading.value = true;
     try {
       const response = await getArticles(params);
-      articles.value = response.data?.list || [];
+      // 后端直接返回文章列表数据，而不是包装在data字段中
+      articles.value = response.list || [];
       return response;
     } finally {
       articleLoading.value = false;
@@ -54,7 +55,8 @@ export const useContentStore = defineStore("content", () => {
     articleLoading.value = true;
     try {
       const response = await getArticleById(id);
-      currentArticle.value = response.data;
+      // 后端直接返回文章详情，而不是包装在data字段中
+      currentArticle.value = response;
       return response;
     } finally {
       articleLoading.value = false;
@@ -66,7 +68,8 @@ export const useContentStore = defineStore("content", () => {
     musicLoading.value = true;
     try {
       const response = await getMusicList();
-      musicList.value = response.data || [];
+      // 后端直接返回音乐列表，而不是包装在data字段中
+      musicList.value = response || [];
       return response;
     } finally {
       musicLoading.value = false;
@@ -78,7 +81,8 @@ export const useContentStore = defineStore("content", () => {
     imageLoading.value = true;
     try {
       const response = await getImageList(params);
-      imageList.value = response.data || [];
+      // 后端直接返回图片列表，而不是包装在data字段中
+      imageList.value = response || [];
       return response;
     } finally {
       imageLoading.value = false;
@@ -90,7 +94,8 @@ export const useContentStore = defineStore("content", () => {
     videoLoading.value = true;
     try {
       const response = await getVideoList();
-      videoList.value = response.data || [];
+      // 后端直接返回视频列表，而不是包装在data字段中
+      videoList.value = response || [];
       return response;
     } finally {
       videoLoading.value = false;
@@ -102,8 +107,8 @@ export const useContentStore = defineStore("content", () => {
     categoryLoading.value = true;
     try {
       const response = await getCategories();
-      // 后端统一包装的响应格式是 { code, message, data }，所以直接访问 data 即可
-      categories.value = response.data || [];
+      // 后端直接返回分类列表数据，而不是包装在data字段中
+      categories.value = response || [];
       return response;
     } finally {
       categoryLoading.value = false;
