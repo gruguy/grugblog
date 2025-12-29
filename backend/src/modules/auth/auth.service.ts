@@ -42,17 +42,13 @@ export class AuthService {
     )
 
     return {
-      code: 200,
-      message: '登录成功',
-      data: {
-        token: accessToken,
-        refreshToken,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          avatar: user.avatar,
-        },
+      token: accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
       },
     }
   }

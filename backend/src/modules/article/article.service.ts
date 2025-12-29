@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, In } from "typeorm";
 import { Article } from "./entities/article.entity";
 import { Category } from "./entities/category.entity";
 import { Tag } from "./entities/tag.entity";
@@ -473,5 +473,61 @@ export class ArticleService {
       where: { userId, articleId },
     });
     return !!collect;
+  }
+
+  /**
+   * 获取用户点赞的文章列表
+   */
+  async getUserLikedArticles(userId: number) {
+    // 查找用户点赞的文章ID列表
+    const likes = await this.articleLikeRepository.find({
+      where: { userId },
+      order: { createdAt: "DESC" },
+    });
+
+    // 获取文章ID列表
+    const articleIds = likes.map(like => like.articleId);
+
+    // 如果没有点赞记录，返回空列表
+    if (articleIds.length === 0) {
+      return [];
+    }
+
+    // 查询文章详情
+    const articles = await this.articleRepository.find({
+      where: { id: In(articleIds) },
+      relations: ["category", "tags"],
+      order: { createdAt: "DESC" },
+    });
+
+    return articles;
+  }
+
+  /**
+   * 获取用户收藏的文章列表
+   */
+  async getUserCollectedArticles(userId: number) {
+    // 查找用户收藏的文章ID列表
+    const collects = await this.articleCollectRepository.find({
+      where: { userId },
+      order: { createdAt: "DESC" },
+    });
+
+    // 获取文章ID列表
+    const articleIds = collects.map(collect => collect.articleId);
+
+    // 如果没有收藏记录，返回空列表
+    if (articleIds.length === 0) {
+      return [];
+    }
+
+    // 查询文章详情
+    const articles = await this.articleRepository.find({
+      where: { id: In(articleIds) },
+      relations: ["category", "tags"],
+      order: { createdAt: "DESC" },
+    });
+
+    return articles;
   }
 }

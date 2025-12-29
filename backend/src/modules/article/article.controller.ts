@@ -180,4 +180,22 @@ export class ArticleController {
     );
     return { isCollected };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("user/liked")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "获取用户点赞的文章列表" })
+  async getUserLikedArticles(@Request() req) {
+    const userId = req.user?.id;
+    return await this.articleService.getUserLikedArticles(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("user/collected")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "获取用户收藏的文章列表" })
+  async getUserCollectedArticles(@Request() req) {
+    const userId = req.user?.id;
+    return await this.articleService.getUserCollectedArticles(userId);
+  }
 }

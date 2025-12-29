@@ -46,7 +46,8 @@ service.interceptors.response.use(
       return Promise.reject(new Error(res.message || "请求失败"));
     }
 
-    return response.data;
+    // 直接返回data字段的内容，方便前端组件使用
+    return res.data;
   },
   (error) => {
     console.error("响应错误:", error);

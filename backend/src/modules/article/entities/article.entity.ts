@@ -1,15 +1,19 @@
 import {
   Entity,
-  Column,
   PrimaryGeneratedColumn,
+  Column,
   ManyToOne,
-  ManyToMany,
-  JoinTable,
+  OneToMany,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
 } from "typeorm";
+import { User } from "../../user/entities/user.entity";
 import { Category } from "./category.entity";
 import { Tag } from "./tag.entity";
+import { Comment } from "../../comment/entities/comment.entity";
 
 @Entity("article")
 export class Article {
@@ -22,7 +26,7 @@ export class Article {
   @Column({ type: "text" })
   content: string;
 
-  @Column({ type: "text", nullable: true })
+  @Column({ nullable: true })
   summary: string;
 
   @Column({ nullable: true })
@@ -34,32 +38,37 @@ export class Article {
   @Column({ default: 0 })
   likes: number;
 
-  @ManyToOne(() => Category, (category) => category.articles)
-  category: Category;
+  @Column({ default: "draft" })
+  status: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: "authorId" })
+  author: User;
 
   @Column()
+  authorId: number;
+
+  @ManyToOne(() => Category)
+  @JoinColumn({ name: "categoryId" })
+  category: Category;
+
+  @Column({ nullable: true })
   categoryId: number;
 
   @ManyToMany(() => Tag, (tag) => tag.articles)
   @JoinTable({
     name: "article_tag",
-    joinColumn: {
-      name: "articleId",
-      referencedColumnName: "id",
-    },
-    inverseJoinColumn: {
-      name: "tagId",
-      referencedColumnName: "id",
-    },
+    joinColumn: { name: "articleId" },
+    inverseJoinColumn: { name: "tagId" },
   })
   tags: Tag[];
+
+  @OneToMany(() => Comment, (comment) => comment.article)
+  comments: Comment[];
 
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
-
-  @Column({ default: "draft" })
-  status: string;
 }

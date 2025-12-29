@@ -39,7 +39,7 @@ service.interceptors.response.use(
   (response: AxiosResponse) => {
     const res = response.data;
 
-    // 处理有code字段的响应（如activityData方法）
+    // 处理统一格式的响应
     if (res.code !== undefined) {
       if (res.code !== 200) {
         if (res.code === 401) {
@@ -52,10 +52,11 @@ service.interceptors.response.use(
         return Promise.reject(new Error(res.message || "请求失败"));
       }
 
+      // 直接返回data字段的内容，方便前端组件使用
       return res.data;
     }
 
-    // 处理没有code字段的响应（如findAll方法）
+    // 兼容旧版API（如果有的话），但现在所有API都应该返回统一格式
     return res;
   },
   (error) => {

@@ -185,8 +185,8 @@
         <!-- 文章榜 -->
         <div class="bg-card rounded-lg border border-border p-4">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-lg">文章榜</h3>
-            <button class="text-sm text-primary hover:underline">换一换</button>
+            <h3 class="font-bold text-lg">热门文章</h3>
+            <button class="text-sm text-primary hover:underline" @click="refreshArticles">换一换</button>
           </div>
           <ul class="space-y-3">
             <li
@@ -208,6 +208,18 @@
                     {{ article.title || `文章 ${article.id}` }}
                   </router-link>
                 </h4>
+                <div class="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <svg
+                    class="w-3 h-3"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                    />
+                  </svg>
+                  <span>{{ article.likes || 0 }}</span>
+                </div>
               </div>
             </li>
           </ul>
@@ -229,13 +241,17 @@
               </div>
               <div class="flex-1">
                 <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium">{{ author.name }}</span>
-                  <button class="text-xs text-primary hover:underline">
-                    + 关注
+                  <span class="text-sm font-medium">{{ author.nickname || author.username }}</span>
+                  <button 
+                    class="text-xs hover:underline"
+                    :class="followStatus[author.id] ? 'text-primary' : 'text-primary'"
+                    @click="handleFollow(author.id)"
+                  >
+                    {{ followStatus[author.id] ? '已关注' : '+ 关注' }}
                   </button>
                 </div>
                 <p class="text-xs text-muted-foreground">
-                  {{ author.specialty }}
+                  发布了 {{ author.articleCount }} 篇文章
                 </p>
               </div>
             </li>
@@ -253,14 +269,22 @@ import ArticleCard from "@/components/ArticleCard.vue";
 import GitHubStyleCalendar from "@/components/GitHubStyleCalendar.vue";
 import { useContentStore } from "@/stores/contentStore";
 import { useActivityStore } from "@/stores/activityStore";
+import { useUserStore } from "@/stores/userStore";
 import type { Article } from "@/types/content";
 import type { ActivityData } from "@/types/activity";
+import { getAuthorRanking, followUser, unfollowUser, checkFollowStatus } from "@/api/content";
 
 const contentStore = useContentStore();
 const activityStore = useActivityStore();
+const userStore = useUserStore();
 
 // 分类选择
 const selectedCategoryId = ref<number | null>(null);
+
+// 作者榜数据
+const topAuthors = ref<any[]>([]);
+// 关注状态
+const followStatus = ref<Record<number, boolean>>({});
 
 // 计算属性：最新动态（使用实际文章数据）
 const recentUpdates = computed(() => {
@@ -278,10 +302,10 @@ const recentUpdates = computed(() => {
     }));
 });
 
-// 计算属性：推荐文章（浏览量最高的前3篇）
+// 计算属性：推荐文章（点赞量最高的前3篇）
 const recommendedArticles = computed(() => {
   return [...contentStore.articles]
-    .sort((a, b) => b.views - a.views)
+    .sort((a, b) => (b.likes || 0) - (a.likes || 0))
     .slice(0, 3);
 });
 
@@ -289,8 +313,7 @@ const recommendedArticles = computed(() => {
 const articles = computed(() => {
   return [...contentStore.articles].sort((a, b) => {
     // 首先按创建时间降序排序
-    const timeDiff =
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     if (timeDiff !== 0) {
       return timeDiff;
     }
@@ -309,16 +332,54 @@ const categoriesWithCount = computed(() => {
   return contentStore.categories;
 });
 
-// 计算属性：作者榜数据（模拟）
-const topAuthors = computed(() => {
-  return [
-    { id: 1, name: "CodeSheep", specialty: "前端 · 后端 · 程序员" },
-    { id: 2, name: "JavaGuide", specialty: "后端 · Java" },
-    { id: 3, name: "alamhubb", specialty: "前端 · 前端框架" },
-    { id: 4, name: "最会吃的虎", specialty: "后端 · MySQL" },
-    { id: 5, name: "ErpanOmer", specialty: "前端 · Vue.js" },
-  ];
-});
+// 获取作者榜数据
+const fetchAuthorRanking = async () => {
+  try {
+    const data = await getAuthorRanking();
+    topAuthors.value = data;
+    
+    // 检查关注状态（独立try-catch，避免影响作者榜数据显示）
+    if (userStore.isLoggedIn) {
+      for (const author of data) {
+        try {
+          const status = await checkFollowStatus(author.id);
+          followStatus.value[author.id] = status.isFollowing;
+        } catch (error) {
+          console.error(`检查关注状态失败（作者ID: ${author.id}）:`, error);
+          // 关注状态检查失败，不影响作者榜数据显示
+          followStatus.value[author.id] = false;
+        }
+      }
+    }
+  } catch (error) {
+    console.error("获取作者榜失败:", error);
+    // 使用空数组作为备选，避免显示默认的模拟数据
+    topAuthors.value = [];
+  }
+};
+
+// 处理关注/取消关注
+const handleFollow = async (authorId: number) => {
+  try {
+    if (!userStore.isLoggedIn) {
+      // 如果未登录，跳转到登录页
+      window.location.href = '/login';
+      return;
+    }
+    
+    if (followStatus.value[authorId]) {
+      // 取消关注
+      await unfollowUser(authorId);
+      followStatus.value[authorId] = false;
+    } else {
+      // 关注
+      await followUser(authorId);
+      followStatus.value[authorId] = true;
+    }
+  } catch (error) {
+    console.error("操作失败:", error);
+  }
+};
 
 onMounted(async () => {
   try {
@@ -335,6 +396,9 @@ onMounted(async () => {
 
     // 获取活动数据
     await activityStore.fetchActivityData();
+    
+    // 获取作者榜数据
+    await fetchAuthorRanking();
   } catch (error) {
     console.error("获取数据失败:", error);
   }
@@ -374,6 +438,13 @@ const handleDateClick = (date: string, data: ActivityData | undefined) => {
 const handleYearChange = async (year: number) => {
   console.log("切换到年份:", year);
   await activityStore.fetchActivityData(year);
+};
+
+// 处理文章榜"换一换"事件
+const refreshArticles = () => {
+  // 这里可以实现更复杂的逻辑，比如随机选择不同的文章
+  // 目前简单实现为重新排序
+  console.log("刷新文章榜");
 };
 
 // 根据类别ID获取标签样式

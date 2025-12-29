@@ -5,6 +5,7 @@ import {
   UseGuards,
   Request,
   Get,
+  Put,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
@@ -48,11 +49,22 @@ export class AuthController {
   @Get("user")
   @ApiOperation({ summary: "获取当前用户信息" })
   async getUserInfo(@Request() req) {
-    return {
-      id: req.user.id,
-      username: req.user.username,
-      email: req.user.email,
-      avatar: req.user.avatar,
-    };
+    const user = await this.userService.findById(req.user.id);
+    if (!user) {
+      throw new Error('用户不存在');
+    }
+    
+    // 返回完整的用户信息，包括nickname和bio
+    const { password, ...result } = user;
+    return result;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put("user")
+  @ApiOperation({ summary: "更新当前用户信息" })
+  async updateUserInfo(@Request() req, @Body() userData: { nickname?: string; bio?: string; avatar?: string }) {
+    const updatedUser = await this.userService.update(req.user.id, userData);
+    const { password, ...result } = updatedUser;
+    return result;
   }
 }

@@ -6,22 +6,19 @@
     <article v-else-if="contentStore.currentArticle" class="max-w-4xl mx-auto">
       <header class="mb-8">
         <h1 class="text-4xl font-bold mb-2">
-          {{
-            contentStore.currentArticle.title ||
+          {{ 
+            contentStore.currentArticle.title || 
             `文章 ${contentStore.currentArticle.id}`
           }}
         </h1>
         <!-- 文章摘要 -->
         <p class="text-lg text-muted-foreground mb-4 max-w-3xl">
-          {{
-            contentStore.currentArticle.summary ||
+          {{ 
+            contentStore.currentArticle.summary || 
             contentStore.currentArticle.content
               .replace(/<[^>]+>/g, "")
-              .substring(0, 50) +
-              (contentStore.currentArticle.content.replace(/<[^>]+>/g, "")
-                .length > 50
-                ? "..."
-                : "")
+              .substring(0, 50) + 
+              (contentStore.currentArticle.content.replace(/<[^>]+>/g, "").length > 50 ? "..." : "")
           }}
         </p>
         <div class="flex items-center space-x-4 text-muted-foreground">
@@ -72,7 +69,7 @@
               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
             />
           </svg>
-          <span class="text-xs mt-1">{{
+          <span class="text-xs mt-1">{{ 
             contentStore.currentArticle.likes || 0
           }}</span>
         </button>
@@ -203,6 +200,7 @@ import { useRoute } from "vue-router";
 import { marked } from "marked";
 import MainLayout from "@/layouts/MainLayout.vue";
 import { useContentStore } from "@/stores/contentStore";
+import { useUserStore } from "@/stores/userStore";
 import dayjs from "dayjs";
 import Comment from "@/components/Comment.vue";
 import {
@@ -216,6 +214,7 @@ import {
 
 const route = useRoute();
 const contentStore = useContentStore();
+const userStore = useUserStore();
 
 // 状态管理
 const renderedContent = computed(() => {
@@ -355,7 +354,7 @@ const submitComment = async () => {
     // 调用API提交评论
     const response = await createArticleComment({
       content: commentContent.value.trim(),
-      author: "匿名用户",
+      author: userStore.user?.nickname || userStore.user?.username || "匿名用户",
       articleId,
       parentId: replyToCommentId.value,
     });
@@ -437,8 +436,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* 自定义文章内容样式 */
 .prose {
-  @apply text-foreground;
+  color: var(--text-foreground);
 }
 
 .prose :deep(h1),
@@ -447,43 +447,25 @@ onMounted(async () => {
 .prose :deep(h4),
 .prose :deep(h5),
 .prose :deep(h6) {
-  @apply text-foreground font-bold mt-8 mb-4;
-}
-
-.prose :deep(p) {
-  @apply mb-4 leading-7;
-}
-
-.prose :deep(code) {
-  @apply bg-muted px-2 py-1 rounded text-sm;
+  color: var(--text-foreground);
 }
 
 .prose :deep(pre) {
-  @apply bg-muted p-4 rounded-lg overflow-x-auto mb-4;
+  background-color: var(--card);
+  border: 1px solid var(--border);
 }
 
-.prose :deep(pre code) {
-  @apply bg-transparent p-0;
+.prose :deep(code) {
+  background-color: var(--muted);
+  color: var(--text-foreground);
 }
 
-.prose :deep(blockquote) {
-  @apply border-l-4 border-primary pl-4 italic my-4;
+/* 平滑过渡动画 */
+.flat-button {
+  transition: all 0.2s ease;
 }
 
-.prose :deep(ul),
-.prose :deep(ol) {
-  @apply mb-4 pl-6;
-}
-
-.prose :deep(li) {
-  @apply mb-2;
-}
-
-.prose :deep(a) {
-  @apply text-primary hover:underline;
-}
-
-.prose :deep(img) {
-  @apply rounded-lg my-4;
+.flat-button:active {
+  transform: scale(0.95);
 }
 </style>

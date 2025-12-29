@@ -17,8 +17,6 @@ import { SystemModule } from "./modules/system/system.module";
 import { UploadModule } from "./modules/upload/upload.module";
 import { CommentModule } from "./modules/comment/comment.module";
 import { TestModule } from "./modules/test/test.module";
-import { APP_GUARD } from "@nestjs/core";
-import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 
 @Module({
   imports: [
@@ -44,10 +42,6 @@ import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
   ],
 })
 export class AppModule {}

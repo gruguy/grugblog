@@ -232,3 +232,42 @@ export const getDraftById = (
     updatedAt: string;
   }>(`/articles/drafts/${id}`);
 };
+
+// 获取用户点赞的文章列表
+export const getUserLikedArticles = (): Promise<Article[]> => {
+  return request.get<Article[]>(`/articles/user/liked`);
+};
+
+// 获取用户收藏的文章列表
+export const getUserCollectedArticles = (): Promise<Article[]> => {
+  return request.get<Article[]>(`/articles/user/collected`);
+};
+
+// 更新用户信息
+export const updateUserInfo = (data: {
+  nickname?: string;
+  bio?: string;
+  avatar?: string;
+}): Promise<any> => {
+  return request.put<any>(`/auth/user`, data);
+};
+
+// 获取作者榜
+export const getAuthorRanking = (): Promise<any[]> => {
+  return request.get<any[]>(`/user/ranking`);
+};
+
+// 关注用户
+export const followUser = (userId: number): Promise<any> => {
+  return request.post<any>(`/user/follow/${userId}`);
+};
+
+// 取消关注
+export const unfollowUser = (userId: number): Promise<any> => {
+  return request.delete<any>(`/user/follow/${userId}`);
+};
+
+// 检查关注状态
+export const checkFollowStatus = (userId: number): Promise<{ isFollowing: boolean }> => {
+  return request.get<{ isFollowing: boolean }>(`/user/follow/${userId}/status`);
+};

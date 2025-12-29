@@ -23,6 +23,7 @@
                 <button
                   class="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full border-2 border-card hover:bg-primary/90 transition-colors"
                   @click="triggerFileInput"
+                  :disabled="isEditing"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
@@ -52,7 +53,32 @@
           </div>
           <!-- 右侧：详细信息 -->
           <div class="md:w-2/3">
-            <h3 class="text-xl font-bold mb-4">个人信息</h3>
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-bold">个人信息</h3>
+              <div class="flex space-x-2">
+                <button
+                  v-if="!isEditing"
+                  @click="startEdit"
+                  class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  编辑
+                </button>
+                <button
+                  v-if="isEditing"
+                  @click="cancelEdit"
+                  class="bg-muted text-foreground px-4 py-2 rounded-md hover:bg-muted/80 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  v-if="isEditing"
+                  @click="saveEdit"
+                  class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  保存
+                </button>
+              </div>
+            </div>
             <div class="space-y-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -66,11 +92,24 @@
               </div>
               <div>
                 <label class="block text-sm font-medium mb-1">昵称</label>
-                <p class="text-foreground">{{ userStore.user?.nickname || '未设置' }}</p>
+                <input
+                  v-if="isEditing"
+                  v-model="editForm.nickname"
+                  type="text"
+                  class="w-full p-2 border border-border rounded-md"
+                  placeholder="请输入昵称"
+                />
+                <p v-else class="text-foreground">{{ userStore.user?.nickname || '未设置' }}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium mb-1">个人简介</label>
-                <p class="text-foreground">{{ userStore.user?.bio || '未设置' }}</p>
+                <textarea
+                  v-if="isEditing"
+                  v-model="editForm.bio"
+                  class="w-full p-2 border border-border rounded-md resize-none h-24"
+                  placeholder="请输入个人简介"
+                ></textarea>
+                <p v-else class="text-foreground">{{ userStore.user?.bio || '未设置' }}</p>
               </div>
             </div>
           </div>
@@ -141,44 +180,94 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useUserStore } from '@/stores/userStore'
+import { getUserLikedArticles, getUserCollectedArticles, updateUserInfo } from '@/api/content'
+import { getUserInfo } from '@/api/auth'
 
 const userStore = useUserStore()
 const activeTab = ref('liked')
 const fileInput = ref<HTMLInputElement | null>(null)
 
-// 模拟数据，实际需要从API获取
-const likedArticles = ref([
-  {
-    id: 1,
-    title: 'Vue3 入门教程',
-    summary: 'Vue3 是一款流行的 JavaScript 框架，用于构建用户界面。',
-    views: 1234,
-    likes: 56,
-    createdAt: '2023-12-25'
-  },
-  {
-    id: 2,
-    title: 'NestJS 后端开发',
-    summary: 'NestJS 是一个用于构建高效、可扩展的 Node.js 服务器端应用程序的框架。',
-    views: 890,
-    likes: 45,
-    createdAt: '2023-12-24'
-  }
-])
+// 真实数据，从API获取
+const likedArticles = ref<any[]>([])
+const collectedArticles = ref<any[]>([])
+const isLoading = ref(false)
 
-const collectedArticles = ref([
-  {
-    id: 3,
-    title: 'TypeScript 类型系统详解',
-    summary: 'TypeScript 是 JavaScript 的一个超集，添加了静态类型定义。',
-    views: 1567,
-    likes: 78,
-    createdAt: '2023-12-23'
+// 编辑相关状态
+const isEditing = ref(false)
+const editForm = ref({
+  nickname: '',
+  bio: ''
+})
+
+// 获取用户信息
+const fetchUserInfo = async () => {
+  try {
+    await userStore.fetchUserInfo()
+    // 初始化编辑表单
+    if (userStore.user) {
+      editForm.value.nickname = userStore.user.nickname || ''
+      editForm.value.bio = userStore.user.bio || ''
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
   }
-])
+}
+
+// 获取用户点赞的文章
+const fetchLikedArticles = async () => {
+  try {
+    isLoading.value = true
+    const data = await getUserLikedArticles()
+    likedArticles.value = data
+  } catch (error) {
+    console.error('获取点赞文章失败:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 获取用户收藏的文章
+const fetchCollectedArticles = async () => {
+  try {
+    isLoading.value = true
+    const data = await getUserCollectedArticles()
+    collectedArticles.value = data
+  } catch (error) {
+    console.error('获取收藏文章失败:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 开始编辑
+const startEdit = () => {
+  isEditing.value = true
+  // 重置表单值
+  if (userStore.user) {
+    editForm.value.nickname = userStore.user.nickname || ''
+    editForm.value.bio = userStore.user.bio || ''
+  }
+}
+
+// 取消编辑
+const cancelEdit = () => {
+  isEditing.value = false
+}
+
+// 保存编辑
+const saveEdit = async () => {
+  try {
+    await updateUserInfo(editForm.value)
+    // 更新用户信息
+    await fetchUserInfo()
+    isEditing.value = false
+  } catch (error) {
+    console.error('更新用户信息失败:', error)
+  }
+}
 
 // 触发文件选择
 const triggerFileInput = () => {
@@ -198,11 +287,17 @@ const handleAvatarUpload = async (event: Event) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   // 检查登录状态
   if (!userStore.isLoggedIn) {
     // 重定向到登录页
     window.location.href = '/login'
+    return
   }
+  
+  // 获取用户信息和文章数据
+  await fetchUserInfo()
+  await fetchLikedArticles()
+  await fetchCollectedArticles()
 })
 </script>

@@ -11,14 +11,14 @@ import { map } from 'rxjs/operators'
 export class TransformInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
-      map((data) => {
+      map(data => {
+        console.log('TransformInterceptor - 处理响应数据:', data);
         return {
           code: 200,
           message: 'success',
-          data,
-        }
-      }),
-    )
+          data
+        };
+      })
+    );
   }
 }
-
