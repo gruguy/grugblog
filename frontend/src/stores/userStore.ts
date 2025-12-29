@@ -12,11 +12,11 @@ export const useUserStore = defineStore("user", () => {
   const userLogin = async (username: string, password: string) => {
     try {
       const response = await login({ username, password });
-      token.value = response.data.token;
+      token.value = response.token;
       // 添加类型断言，处理缺少createdAt和updatedAt字段的情况
-      user.value = response.data.user as User;
+      user.value = response.user as User;
       isLoggedIn.value = true;
-      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("token", response.token);
       return response;
     } catch (error) {
       throw error;
@@ -29,7 +29,7 @@ export const useUserStore = defineStore("user", () => {
 
     try {
       const response = await getUserInfo();
-      user.value = response.data;
+      user.value = response;
       return response;
     } catch (error) {
       // Token可能已过期，清除登录状态

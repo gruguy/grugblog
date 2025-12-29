@@ -72,7 +72,16 @@
       >
         <!-- 文章列表 -->
         <div class="space-y-6 overflow-y-auto max-h-full p-1">
+          <!-- 空数据状态 -->
+          <Empty
+            v-if="articles.length === 0"
+            title="暂无文章"
+            description="目前没有发布任何文章，敬请期待"
+          />
+
+          <!-- 文章列表 -->
           <div
+            v-else
             v-for="(article, index) in articles"
             :key="article.id"
             class="bg-card rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow relative"
@@ -122,7 +131,33 @@
                     class="flex items-center justify-between text-sm text-muted-foreground"
                   >
                     <div class="flex items-center space-x-4">
-                      <span>{{ article.author || "匿名" }}</span>
+                      <div class="flex items-center">
+                        <div
+                          v-if="!article.author?.avatar"
+                          class="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold"
+                        >
+                          {{
+                            (
+                              article.author?.nickname ||
+                              article.author?.username ||
+                              "U"
+                            )
+                              .charAt(0)
+                              .toUpperCase()
+                          }}
+                        </div>
+                        <img
+                          v-else
+                          :src="article.author?.avatar"
+                          alt="作者头像"
+                          class="w-6 h-6 rounded-full mr-2"
+                        />
+                        <span>{{
+                          article.author?.nickname ||
+                          article.author?.username ||
+                          "匿名"
+                        }}</span>
+                      </div>
                       <span class="flex items-center gap-1">
                         <svg
                           class="w-4 h-4 text-muted-foreground"
@@ -186,7 +221,12 @@
         <div class="bg-card rounded-lg border border-border p-4">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-lg">热门文章</h3>
-            <button class="text-sm text-primary hover:underline" @click="refreshArticles">换一换</button>
+            <button
+              class="text-sm text-primary hover:underline"
+              @click="refreshArticles"
+            >
+              换一换
+            </button>
           </div>
           <ul class="space-y-3">
             <li
@@ -208,12 +248,10 @@
                     {{ article.title || `文章 ${article.id}` }}
                   </router-link>
                 </h4>
-                <div class="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <svg
-                    class="w-3 h-3"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                <div
+                  class="text-xs text-muted-foreground mt-1 flex items-center gap-1"
+                >
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                     <path
                       d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
                     />
@@ -241,13 +279,17 @@
               </div>
               <div class="flex-1">
                 <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium">{{ author.nickname || author.username }}</span>
-                  <button 
+                  <span class="text-sm font-medium">{{
+                    author.nickname || author.username
+                  }}</span>
+                  <button
                     class="text-xs hover:underline"
-                    :class="followStatus[author.id] ? 'text-primary' : 'text-primary'"
+                    :class="
+                      followStatus[author.id] ? 'text-primary' : 'text-primary'
+                    "
                     @click="handleFollow(author.id)"
                   >
-                    {{ followStatus[author.id] ? '已关注' : '+ 关注' }}
+                    {{ followStatus[author.id] ? "已关注" : "+ 关注" }}
                   </button>
                 </div>
                 <p class="text-xs text-muted-foreground">
@@ -265,14 +307,19 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import MainLayout from "@/layouts/MainLayout.vue";
-import ArticleCard from "@/components/ArticleCard.vue";
 import GitHubStyleCalendar from "@/components/GitHubStyleCalendar.vue";
+import Empty from "@/components/Empty.vue";
 import { useContentStore } from "@/stores/contentStore";
 import { useActivityStore } from "@/stores/activityStore";
 import { useUserStore } from "@/stores/userStore";
-import type { Article } from "@/types/content";
 import type { ActivityData } from "@/types/activity";
-import { getAuthorRanking, followUser, unfollowUser, checkFollowStatus } from "@/api/content";
+import {
+  getAuthorRanking,
+  followUser,
+  unfollowUser,
+  checkFollowStatus,
+} from "@/api/content";
+import { message } from "@/utils/alertUtils";
 
 const contentStore = useContentStore();
 const activityStore = useActivityStore();
@@ -286,22 +333,6 @@ const topAuthors = ref<any[]>([]);
 // 关注状态
 const followStatus = ref<Record<number, boolean>>({});
 
-// 计算属性：最新动态（使用实际文章数据）
-const recentUpdates = computed(() => {
-  // 从文章中生成最新动态，只显示最近5条
-  return [...contentStore.articles]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-    .slice(0, 5)
-    .map((article, index) => ({
-      id: index + 1,
-      content: `发布了新文章《${article.title || `文章 ${article.id}`}》`,
-      time: new Date(article.createdAt).toLocaleString(),
-    }));
-});
-
 // 计算属性：推荐文章（点赞量最高的前3篇）
 const recommendedArticles = computed(() => {
   return [...contentStore.articles]
@@ -313,7 +344,8 @@ const recommendedArticles = computed(() => {
 const articles = computed(() => {
   return [...contentStore.articles].sort((a, b) => {
     // 首先按创建时间降序排序
-    const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    const timeDiff =
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     if (timeDiff !== 0) {
       return timeDiff;
     }
@@ -337,7 +369,7 @@ const fetchAuthorRanking = async () => {
   try {
     const data = await getAuthorRanking();
     topAuthors.value = data;
-    
+
     // 检查关注状态（独立try-catch，避免影响作者榜数据显示）
     if (userStore.isLoggedIn) {
       for (const author of data) {
@@ -363,10 +395,10 @@ const handleFollow = async (authorId: number) => {
   try {
     if (!userStore.isLoggedIn) {
       // 如果未登录，跳转到登录页
-      window.location.href = '/login';
+      window.location.href = "/login";
       return;
     }
-    
+
     if (followStatus.value[authorId]) {
       // 取消关注
       await unfollowUser(authorId);
@@ -376,8 +408,13 @@ const handleFollow = async (authorId: number) => {
       await followUser(authorId);
       followStatus.value[authorId] = true;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("操作失败:", error);
+    if (error.response?.data?.message === "不能关注自己") {
+      message.error("不能关注自己");
+    } else {
+      message.error("操作失败，请稍后重试");
+    }
   }
 };
 
@@ -392,11 +429,11 @@ onMounted(async () => {
       size: 10,
     });
     // 初始化总文章数量
-    totalArticlesCount.value = articlesResponse.data?.total || 0;
+    totalArticlesCount.value = articlesResponse.total || 0;
 
     // 获取活动数据
     await activityStore.fetchActivityData();
-    
+
     // 获取作者榜数据
     await fetchAuthorRanking();
   } catch (error) {
@@ -422,7 +459,7 @@ const fetchArticlesByCategory = async () => {
 
     // 如果是全部文章，更新总文章数量
     if (selectedCategoryId.value === null) {
-      totalArticlesCount.value = articlesResponse.data?.total || 0;
+      totalArticlesCount.value = articlesResponse.total || 0;
     }
   } catch (error) {
     console.error("获取文章失败:", error);

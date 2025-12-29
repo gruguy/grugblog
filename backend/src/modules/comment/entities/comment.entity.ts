@@ -31,13 +31,13 @@ export class Comment {
   @Column({ nullable: true })
   parentId: number | null;
 
-  @ManyToOne(() => Article)
+  @ManyToOne(() => Article, { nullable: true })
   @JoinColumn({ name: "articleId" })
-  article: Article;
+  article: Article | null;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: "userId" })
-  user: User;
+  user: User | null;
 
   @ManyToOne(() => Comment, (comment) => comment.replies, { nullable: true })
   @JoinColumn({ name: "parentId" })

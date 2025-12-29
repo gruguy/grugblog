@@ -19,7 +19,9 @@ export interface ArticleListResponse {
 export const getArticles = (
   params?: ArticleListParams
 ): Promise<ArticleListResponse> => {
-  return request.get<ArticleListResponse>("/articles", { params });
+  return request.get<ArticleListResponse>("/articles", {
+    params,
+  });
 };
 
 // 获取文章详情
@@ -161,7 +163,7 @@ export const saveArticleDraft = (data: {
     content: string;
     status: "draft";
     updatedAt: string;
-  }>(`/articles/draft`, data);
+  }>(`/articles/drafts`, data);
 };
 
 // 发表文章
@@ -235,12 +237,12 @@ export const getDraftById = (
 
 // 获取用户点赞的文章列表
 export const getUserLikedArticles = (): Promise<Article[]> => {
-  return request.get<Article[]>(`/articles/user/liked`);
+  return request.get<Article[]>("/articles/user/liked");
 };
 
 // 获取用户收藏的文章列表
 export const getUserCollectedArticles = (): Promise<Article[]> => {
-  return request.get<Article[]>(`/articles/user/collected`);
+  return request.get<Article[]>("/articles/user/collected");
 };
 
 // 更新用户信息
@@ -249,12 +251,12 @@ export const updateUserInfo = (data: {
   bio?: string;
   avatar?: string;
 }): Promise<any> => {
-  return request.put<any>(`/auth/user`, data);
+  return request.put<any>("/user/info", data);
 };
 
 // 获取作者榜
 export const getAuthorRanking = (): Promise<any[]> => {
-  return request.get<any[]>(`/user/ranking`);
+  return request.get<any[]>("/user/ranking");
 };
 
 // 关注用户
@@ -268,6 +270,13 @@ export const unfollowUser = (userId: number): Promise<any> => {
 };
 
 // 检查关注状态
-export const checkFollowStatus = (userId: number): Promise<{ isFollowing: boolean }> => {
+export const checkFollowStatus = (
+  userId: number
+): Promise<{ isFollowing: boolean }> => {
   return request.get<{ isFollowing: boolean }>(`/user/follow/${userId}/status`);
+};
+
+// 获取关注的作者列表
+export const getFollowedAuthors = (): Promise<any[]> => {
+  return request.get<any[]>("/user/following");
 };

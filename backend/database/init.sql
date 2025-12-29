@@ -72,14 +72,18 @@ CREATE TABLE `article` (
   `views` INT NOT NULL DEFAULT 0 COMMENT '阅读量',
   `likes` INT NOT NULL DEFAULT 0 COMMENT '点赞数',
   `categoryId` INT DEFAULT NULL COMMENT '分类ID',
+  `authorId` INT DEFAULT NULL COMMENT '作者ID',
+  `status` VARCHAR(20) NOT NULL DEFAULT 'draft' COMMENT '文章状态：draft(草稿)、published(已发布)、archived(已归档)',
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   KEY `idx_categoryId` (`categoryId`),
+  KEY `idx_authorId` (`authorId`),
   KEY `idx_createdAt` (`createdAt`),
   KEY `idx_views` (`views`),
   KEY `idx_title` (`title`(50)),
-  CONSTRAINT `fk_article_category` FOREIGN KEY (`categoryId`) REFERENCES `category` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `fk_article_category` FOREIGN KEY (`categoryId`) REFERENCES `category` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_article_author` FOREIGN KEY (`authorId`) REFERENCES `user` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章表';
 
 -- ============================================

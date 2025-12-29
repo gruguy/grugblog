@@ -103,8 +103,13 @@ export class ArticleController {
   @Post()
   @ApiBearerAuth()
   @ApiOperation({ summary: "创建文章" })
-  async create(@Body() createArticleDto: CreateArticleDto) {
-    return this.articleService.create(createArticleDto);
+  async create(@Body() createArticleDto: CreateArticleDto, @Request() req) {
+    // 添加当前登录用户ID作为文章作者ID
+    const articleWithAuthor = {
+      ...createArticleDto,
+      authorId: req.user.id,
+    };
+    return this.articleService.create(articleWithAuthor);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -140,40 +145,40 @@ export class ArticleController {
     return this.articleService.update(+id, updateDto);
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Post(":id/like")
+  @ApiBearerAuth()
   @ApiOperation({ summary: "切换点赞状态" })
   async toggleLike(@Param("id") id: string, @Request() req) {
-    // 允许匿名点赞，使用默认userId=0
-    const userId = req.user?.id || 0;
+    const userId = req.user.id;
     return await this.articleService.toggleLike(userId, +id);
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Get(":id/like/status")
+  @ApiBearerAuth()
   @ApiOperation({ summary: "检查点赞状态" })
   async checkLikeStatus(@Param("id") id: string, @Request() req) {
-    // 允许匿名检查点赞状态，使用默认userId=0
-    const userId = req.user?.id || 0;
+    const userId = req.user.id;
     const isLiked = await this.articleService.checkLikeStatus(userId, +id);
     return { isLiked };
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Post(":id/collect")
+  @ApiBearerAuth()
   @ApiOperation({ summary: "切换收藏状态" })
   async toggleCollect(@Param("id") id: string, @Request() req) {
-    // 允许匿名收藏，使用默认userId=0
-    const userId = req.user?.id || 0;
+    const userId = req.user.id;
     return await this.articleService.toggleCollect(userId, +id);
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Get(":id/collect/status")
+  @ApiBearerAuth()
   @ApiOperation({ summary: "检查收藏状态" })
   async checkCollectStatus(@Param("id") id: string, @Request() req) {
-    // 允许匿名检查收藏状态，使用默认userId=0
-    const userId = req.user?.id || 0;
+    const userId = req.user.id;
     const isCollected = await this.articleService.checkCollectStatus(
       userId,
       +id
@@ -186,7 +191,7 @@ export class ArticleController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "获取用户点赞的文章列表" })
   async getUserLikedArticles(@Request() req) {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     return await this.articleService.getUserLikedArticles(userId);
   }
 
@@ -195,7 +200,7 @@ export class ArticleController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "获取用户收藏的文章列表" })
   async getUserCollectedArticles(@Request() req) {
-    const userId = req.user?.id;
+    const userId = req.user.id;
     return await this.articleService.getUserCollectedArticles(userId);
   }
 }

@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 
 // 类型定义
 type ActivityData = {
@@ -121,11 +121,6 @@ const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 // 图例颜色
 const legendColors = ["#d0d7de", "#9be9a8", "#40c463", "#30a14e", "#216e39"];
-
-// 计算属性：总贡献数
-const totalContributions = computed(() => {
-  return props.data.reduce((sum, item) => sum + item.count, 0);
-});
 
 // 计算属性：按年份过滤的数据
 const filteredData = computed(() => {
@@ -202,7 +197,6 @@ const monthCells = computed(() => {
 // 计算属性：日历天数
 const calendarDays = computed(() => {
   const days = [];
-  const startDate = new Date(currentYear.value, 0, 1);
   const endDate = new Date(currentYear.value, 11, 31);
 
   // 计算第一周的起始日期（调整到周一）
@@ -251,7 +245,10 @@ const calendarDays = computed(() => {
 const calendarByWeekday = computed(() => {
   const data = calendarDays.value;
   // 创建7个数组，分别对应周一到周日
-  const weekdayArrays = Array.from({ length: 7 }, () => []);
+  const weekdayArrays = Array.from(
+    { length: 7 },
+    () => [] as (typeof data)[0][]
+  );
 
   // 将日期按周几分配到对应的数组
   data.forEach((day) => {
@@ -259,19 +256,6 @@ const calendarByWeekday = computed(() => {
   });
 
   return weekdayArrays;
-});
-
-// 计算属性：按周分组的日历数据（保留原功能，可能后续删除）
-const calendarWeeks = computed(() => {
-  const weeks = [];
-  const days = calendarDays.value;
-
-  // 将所有日期按7天一组分组
-  for (let i = 0; i < days.length; i += 7) {
-    weeks.push(days.slice(i, i + 7));
-  }
-
-  return weeks;
 });
 
 // 生成tooltip内容

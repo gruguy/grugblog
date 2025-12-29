@@ -47,7 +47,7 @@ export class ArticleService {
 
     // 清除缓存
     await this.redisService.del("articles:list:*");
-    await this.redisService.del("articles:activity");
+    await this.redisService.del("articles:activity_v2:*");
 
     return savedArticle;
   }
@@ -70,6 +70,7 @@ export class ArticleService {
       .createQueryBuilder("article")
       .leftJoinAndSelect("article.category", "category")
       .leftJoinAndSelect("article.tags", "tags")
+      .leftJoinAndSelect("article.author", "author")
       .orderBy("article.createdAt", "DESC");
 
     if (categoryId) {
@@ -110,7 +111,7 @@ export class ArticleService {
 
     const article = await this.articleRepository.findOne({
       where: { id },
-      relations: ["category", "tags"],
+      relations: ["category", "tags", "author"],
     });
 
     if (!article) {
@@ -174,7 +175,7 @@ export class ArticleService {
     // 清除缓存
     await this.redisService.del("articles:list:*");
     await this.redisService.del(`article:${id}`);
-    await this.redisService.del("articles:activity");
+    await this.redisService.del("articles:activity_v2:*");
 
     // 返回更新后的文章
     return this.findOne(id);
@@ -187,7 +188,7 @@ export class ArticleService {
     // 清除缓存
     await this.redisService.del("articles:list:*");
     await this.redisService.del(`article:${id}`);
-    await this.redisService.del("articles:activity");
+    await this.redisService.del("articles:activity_v2:*");
   }
 
   /**
@@ -479,27 +480,35 @@ export class ArticleService {
    * 获取用户点赞的文章列表
    */
   async getUserLikedArticles(userId: number) {
+    console.log("获取用户点赞文章 - userId:", userId);
+
     // 查找用户点赞的文章ID列表
     const likes = await this.articleLikeRepository.find({
       where: { userId },
       order: { createdAt: "DESC" },
     });
 
+    console.log("获取到的点赞记录:", likes.length, likes);
+
     // 获取文章ID列表
-    const articleIds = likes.map(like => like.articleId);
+    const articleIds = likes.map((like) => like.articleId);
+
+    console.log("提取的文章ID列表:", articleIds);
 
     // 如果没有点赞记录，返回空列表
     if (articleIds.length === 0) {
+      console.log("没有点赞记录，返回空列表");
       return [];
     }
 
     // 查询文章详情
     const articles = await this.articleRepository.find({
       where: { id: In(articleIds) },
-      relations: ["category", "tags"],
+      relations: ["category", "tags", "author"],
       order: { createdAt: "DESC" },
     });
 
+    console.log("查询到的文章数量:", articles.length);
     return articles;
   }
 
@@ -507,17 +516,24 @@ export class ArticleService {
    * 获取用户收藏的文章列表
    */
   async getUserCollectedArticles(userId: number) {
+    console.log("获取用户收藏文章 - userId:", userId);
+
     // 查找用户收藏的文章ID列表
     const collects = await this.articleCollectRepository.find({
       where: { userId },
       order: { createdAt: "DESC" },
     });
 
+    console.log("获取到的收藏记录:", collects.length, collects);
+
     // 获取文章ID列表
-    const articleIds = collects.map(collect => collect.articleId);
+    const articleIds = collects.map((collect) => collect.articleId);
+
+    console.log("提取的文章ID列表:", articleIds);
 
     // 如果没有收藏记录，返回空列表
     if (articleIds.length === 0) {
+      console.log("没有收藏记录，返回空列表");
       return [];
     }
 
@@ -528,6 +544,7 @@ export class ArticleService {
       order: { createdAt: "DESC" },
     });
 
+    console.log("查询到的文章数量:", articles.length);
     return articles;
   }
 }

@@ -3,13 +3,15 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Comment } from "./entities/comment.entity";
 import { RedisService } from "@/common/redis/redis.service";
+import { ArticleService } from "../article/article.service";
 
 @Injectable()
 export class CommentService {
   constructor(
     @InjectRepository(Comment)
     private commentRepository: Repository<Comment>,
-    private redisService: RedisService
+    private redisService: RedisService,
+    private articleService: ArticleService
   ) {}
 
   /**
@@ -22,6 +24,9 @@ export class CommentService {
     userId: number,
     parentId?: number | null
   ) {
+    // 验证文章是否存在
+    await this.articleService.findOne(articleId);
+
     const comment = this.commentRepository.create({
       content,
       author,
@@ -51,14 +56,14 @@ export class CommentService {
         return JSON.parse(cached);
       }
     } catch (error) {
-      console.error('Redis缓存获取失败:', error);
+      console.error("Redis缓存获取失败:", error);
     }
 
     // 获取所有评论，包括回复
     const comments = await this.commentRepository.find({
       where: { articleId },
-      order: { createdAt: 'DESC' },
-      relations: ['replies'],
+      order: { createdAt: "DESC" },
+      relations: ["replies"],
     });
 
     // 将评论转换为树形结构
@@ -66,12 +71,12 @@ export class CommentService {
     const commentMap = new Map<number, Comment>();
 
     // 首先将所有评论添加到映射中
-    comments.forEach(comment => {
+    comments.forEach((comment) => {
       commentMap.set(comment.id, comment);
     });
 
     // 然后构建树形结构
-    comments.forEach(comment => {
+    comments.forEach((comment) => {
       if (!comment.parentId) {
         // 根评论
         rootComments.push(comment);
@@ -89,7 +94,7 @@ export class CommentService {
       // 缓存1小时
       await this.redisService.set(cacheKey, JSON.stringify(rootComments), 3600);
     } catch (error) {
-      console.error('Redis缓存设置失败:', error);
+      console.error("Redis缓存设置失败:", error);
     }
 
     return rootComments;

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-background">
+  <div class="min-h-screen bg-background flex flex-col">
     <!-- 导航栏 -->
     <nav class="sticky top-0 z-50 bg-card border-b border-border">
       <div class="container mx-auto px-4">
@@ -340,7 +340,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useUserStore } from "@/stores/userStore";
 import Modal from "@/components/Modal.vue";
-import { login as apiLogin, register as apiRegister } from "@/api/auth";
+import { register as apiRegister } from "@/api/auth";
 import { message } from "@/utils/alertUtils";
 import { useRoute } from "vue-router";
 

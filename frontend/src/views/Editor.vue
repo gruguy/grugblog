@@ -8,6 +8,22 @@
         placeholder="输入文章标题..."
         class="title-input"
       />
+      <div class="category-selector">
+        <select
+          v-model="selectedCategory"
+          class="category-dropdown"
+          placeholder="选择文章分类..."
+        >
+          <option value="">未分类</option>
+          <option
+            v-for="category in categories"
+            :key="category.id"
+            :value="category.id"
+          >
+            {{ category.name }}
+          </option>
+        </select>
+      </div>
       <div class="header-actions">
         <span class="auto-save">文章将自动保存到草稿箱</span>
         <button
@@ -248,7 +264,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useUserStore } from "@/stores/userStore";
 import { useRouter } from "vue-router";
-import { publishArticle, saveArticleDraft } from "@/api/content";
+import { publishArticle, saveArticleDraft, getCategories } from "@/api/content";
 import { message } from "@/utils/alertUtils";
 
 const userStore = useUserStore();
@@ -260,6 +276,10 @@ const content = ref("");
 const previewContent = ref("");
 const editorInput = ref<HTMLElement | null>(null);
 const editorMain = ref<HTMLElement | null>(null);
+
+// 文章分类
+const categories = ref<any[]>([]);
+const selectedCategory = ref<number | undefined>(undefined);
 
 // 滚动同步
 const syncScroll = ref(true);
@@ -339,6 +359,7 @@ const handleSaveDraft = async () => {
       title: title.value.trim() || "未命名草稿",
       content: content.value,
       status: "draft",
+      categoryId: selectedCategory.value,
     });
     message.success("草稿已保存");
   } catch (error: any) {
@@ -366,6 +387,7 @@ const handlePublish = async () => {
       title: title.value.trim(),
       content: content.value,
       status: "published",
+      categoryId: selectedCategory.value,
     });
     message.success("文章已发表");
     // 发表成功后跳转到文章详情页
@@ -378,13 +400,27 @@ const handlePublish = async () => {
   }
 };
 
+// 获取分类列表
+const fetchCategories = async () => {
+  try {
+    const data = await getCategories();
+    categories.value = data;
+  } catch (error) {
+    console.error("获取分类列表失败:", error);
+    message.error("获取分类列表失败");
+  }
+};
+
 // 初始化编辑器
-onMounted(() => {
+onMounted(async () => {
   // 检查登录状态
   if (!userStore.isLoggedIn) {
     router.push("/");
     return;
   }
+
+  // 获取分类列表
+  await fetchCategories();
 
   // 设置编辑区焦点
   if (editorInput.value) {
@@ -444,6 +480,25 @@ onMounted(() => {
   margin-right: 24px;
   background-color: #f8f9fa;
   border-radius: 4px;
+}
+
+.category-selector {
+  margin-right: 24px;
+}
+
+.category-dropdown {
+  padding: 8px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.category-dropdown:hover {
+  border-color: #1890ff;
 }
 
 .header-actions {

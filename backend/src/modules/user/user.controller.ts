@@ -1,73 +1,98 @@
-import { Controller, Get, UseGuards, Request, Post, Delete, Param } from '@nestjs/common'
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
-import { UserService } from './user.service'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { Public } from '@/common/decorators/public.decorator'
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Request,
+  Post,
+  Delete,
+  Param,
+  Put,
+  Body,
+} from "@nestjs/common";
+import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
+import { UserService } from "./user.service";
+import { JwtAuthGuard } from "@/common/guards/jwt-auth.guard";
+import { Public } from "@/common/decorators/public.decorator";
 
-@ApiTags('用户')
-@Controller('user')
+@ApiTags("用户")
+@Controller("user")
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Get('profile')
+  @Get("profile")
   async getProfile(@Request() req) {
-    const user = await this.userService.findById(req.user.id)
+    const user = await this.userService.findById(req.user.id);
     if (!user) {
-      throw new Error('用户不存在')
+      throw new Error("用户不存在");
     }
-    const { password, ...result } = user
-    return result
+    const { password, ...result } = user;
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Post('follow/:id')
-  async followUser(@Request() req, @Param('id') followingId: string) {
-    const userId = req.user.id
-    const follow = await this.userService.followUser(userId, parseInt(followingId))
-    return follow
+  @Put("info")
+  async updateUserInfo(@Request() req, @Body() updateData) {
+    const userId = req.user.id;
+    const updatedUser = await this.userService.update(userId, updateData);
+    const { password, ...result } = updatedUser;
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Delete('follow/:id')
-  async unfollowUser(@Request() req, @Param('id') followingId: string) {
-    const userId = req.user.id
-    await this.userService.unfollowUser(userId, parseInt(followingId))
-    return { message: '取消关注成功' }
+  @Post("follow/:id")
+  async followUser(@Request() req, @Param("id") followingId: string) {
+    const userId = req.user.id;
+    const follow = await this.userService.followUser(
+      userId,
+      parseInt(followingId)
+    );
+    return follow;
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Get('follow/:id/status')
-  async checkFollowStatus(@Request() req, @Param('id') followingId: string) {
-    const userId = req.user.id
-    const isFollowing = await this.userService.isFollowing(userId, parseInt(followingId))
-    return { isFollowing }
+  @Delete("follow/:id")
+  async unfollowUser(@Request() req, @Param("id") followingId: string) {
+    const userId = req.user.id;
+    await this.userService.unfollowUser(userId, parseInt(followingId));
+    return { message: "取消关注成功" };
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Get('following')
+  @Get("follow/:id/status")
+  async checkFollowStatus(@Request() req, @Param("id") followingId: string) {
+    const userId = req.user.id;
+    const isFollowing = await this.userService.isFollowing(
+      userId,
+      parseInt(followingId)
+    );
+    return { isFollowing };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get("following")
   async getFollowingList(@Request() req) {
-    const userId = req.user.id
-    return this.userService.getFollowingList(userId)
+    const userId = req.user.id;
+    return this.userService.getFollowingList(userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Get('followers')
+  @Get("followers")
   async getFollowersList(@Request() req) {
-    const userId = req.user.id
-    return this.userService.getFollowersList(userId)
+    const userId = req.user.id;
+    return this.userService.getFollowersList(userId);
   }
 
   @Public()
-  @Get('ranking')
+  @Get("ranking")
   async getAuthorRanking() {
-    return this.userService.getAuthorRanking(5)
+    return this.userService.getAuthorRanking(5);
   }
 }
-

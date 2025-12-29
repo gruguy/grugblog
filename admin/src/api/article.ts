@@ -34,6 +34,7 @@ export interface ArticleListItem {
   id: number;
   title: string;
   category: { id: number; name: string } | null;
+  author: { id: number; username: string } | null;
   content: string;
   views: number;
   likes: number;

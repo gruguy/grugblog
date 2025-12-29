@@ -29,14 +29,17 @@
           </svg>
         </button>
       </div>
-      
+
       <!-- 内容 -->
       <div class="p-6">
         <slot></slot>
       </div>
-      
+
       <!-- 底部 -->
-      <div v-if="$slots.footer" class="flex items-center justify-end gap-3 p-6 border-t border-border">
+      <div
+        v-if="$slots.footer"
+        class="flex items-center justify-end gap-3 p-6 border-t border-border"
+      >
         <slot name="footer"></slot>
       </div>
     </div>
@@ -44,22 +47,22 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, watch } from 'vue'
+import { watch } from "vue";
 
 const props = defineProps<{
-  modelValue: boolean
-  title?: string
-}>()
+  modelValue: boolean;
+  title?: string;
+}>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  close: []
-}>()
+  "update:modelValue": [value: boolean];
+  close: [];
+}>();
 
 const handleClose = () => {
-  emit('update:modelValue', false)
-  emit('close')
-}
+  emit("update:modelValue", false);
+  emit("close");
+};
 
 // 监听modal显示状态，控制body滚动
 watch(
@@ -67,13 +70,13 @@ watch(
   (newValue) => {
     if (newValue) {
       // 禁止body滚动
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = "hidden";
     } else {
       // 恢复body滚动
-      document.body.style.overflow = ''
+      document.body.style.overflow = "";
     }
   }
-)
+);
 </script>
 
 <style scoped>

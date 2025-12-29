@@ -91,7 +91,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from "vue";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
@@ -116,11 +115,10 @@ dayjs.extend(relativeTime);
 
 // 格式化日期为相对时间
 const formatDate = (date: string) => {
-  if (!date) return '';
+  if (!date) return "";
   const now = dayjs();
   const target = dayjs(date);
   const diffMinutes = now.diff(target, "minute");
-  const diffHours = now.diff(target, "hour");
   const yesterday = now.subtract(1, "day");
   const isYesterday = target.isSame(yesterday, "day");
   const diffDays = now.diff(target, "day");

@@ -18,6 +18,11 @@
             {{ scope.row.category?.name || "无分类" }}
           </template>
         </el-table-column>
+        <el-table-column label="作者" width="120">
+          <template #default="scope">
+            {{ scope.row.author?.username || "未知作者" }}
+          </template>
+        </el-table-column>
         <el-table-column prop="views" label="阅读量" width="100" />
         <el-table-column label="状态" width="120">
           <template #default="scope">
@@ -61,11 +66,12 @@ import {
   getArticleList,
   deleteArticle,
   updateArticleStatus,
+  type ArticleListItem,
 } from "@/api/article";
 import dayjs from "dayjs";
 
 const router = useRouter();
-const articleList = ref([]);
+const articleList = ref<ArticleListItem[]>([]);
 
 // 格式化日期
 const formatDate = (date: string) => {

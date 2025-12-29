@@ -18,11 +18,17 @@ export const useActivityStore = defineStore("activity", () => {
 
     try {
       // 使用真实API请求
-      let activityDataFromApi = [];
+      let activityDataFromApi: Array<{
+        date: string;
+        count: number;
+        description?: string;
+      }> = [];
       try {
-        const res = await getActivityData(year);
-        // 后端统一响应格式是 { code, message, data }，所以直接访问 res.data 获取活动数据
-        activityDataFromApi = res.data || [];
+        // 从API获取数据
+        const apiResponse = await getActivityData(year);
+
+        // 处理API响应，确保获取的是数组数据
+        activityDataFromApi = Array.isArray(apiResponse) ? apiResponse : [];
       } catch (err) {
         console.log("获取真实活动数据失败，使用模拟数据");
         // 如果API请求失败，生成模拟数据
@@ -47,7 +53,7 @@ export const useActivityStore = defineStore("activity", () => {
 
       // 创建日期到活动数据的映射，只保留指定年份的数据
       const activityMap = new Map<string, number>();
-      activityDataFromApi.forEach((item) => {
+      activityDataFromApi.forEach((item: { date: string; count: number }) => {
         if (item.date.startsWith(`${targetYear}-`)) {
           activityMap.set(item.date, item.count);
         }
