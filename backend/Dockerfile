@@ -26,8 +26,9 @@ RUN npm ci --only=production
 
 # 复制构建产物
 COPY --from=builder /app/dist ./dist
-# 复制上传目录
-COPY --from=builder /app/uploads ./uploads
+
+# 创建上传目录（如果不存在）
+RUN mkdir -p uploads
 
 EXPOSE 3000
 
