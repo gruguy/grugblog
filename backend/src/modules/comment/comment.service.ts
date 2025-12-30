@@ -119,4 +119,34 @@ export class CommentService {
 
     return { message: "删除成功" };
   }
+
+  /**
+   * 切换评论点赞状态
+   */
+  async toggleLike(commentId: number, userId: number = 0) {
+    // 获取评论
+    const comment = await this.commentRepository.findOne({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException("评论不存在");
+    }
+
+    // 切换点赞状态
+    comment.liked = !comment.liked;
+    comment.likes += comment.liked ? 1 : -1;
+
+    // 保存更新后的评论
+    const updatedComment = await this.commentRepository.save(comment);
+
+    // 清除缓存
+    await this.redisService.del(`comments:article:${updatedComment.articleId}`);
+
+    return {
+      id: updatedComment.id,
+      liked: updatedComment.liked,
+      likes: updatedComment.likes,
+    };
+  }
 }

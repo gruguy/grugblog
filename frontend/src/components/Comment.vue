@@ -109,7 +109,7 @@ interface CommentProps {
   onReply?: (comment: any) => void;
 }
 
-const emit = defineEmits(["reply"]);
+const emit = defineEmits(["reply", "like"]);
 
 dayjs.extend(relativeTime);
 
@@ -183,10 +183,7 @@ const onReplyClick = () => {
 
 // 处理点赞点击事件
 const onLikeClick = () => {
-  // 这里需要调用后端API来处理点赞逻辑
-  // 暂时使用模拟数据更新点赞状态和数量
-  const comment = props.comment;
-  comment.liked = !comment.liked;
-  comment.likes += comment.liked ? 1 : -1;
+  // 不直接修改props，而是通过emit事件通知父组件更新数据
+  emit("like", props.comment.id);
 };
 </script>

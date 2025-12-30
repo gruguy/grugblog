@@ -4,6 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ScheduleModule } from "@nestjs/schedule";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
+import { TestController } from "./test.controller";
 import { DatabaseModule } from "./database/database.module";
 import { RedisModule } from "./common/redis/redis.module";
 import { AuthModule } from "./modules/auth/auth.module";
@@ -39,7 +40,7 @@ import { TestModule } from "./modules/test/test.module";
     CommentModule,
     TestModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, TestController],
   providers: [
     AppService,
   ],

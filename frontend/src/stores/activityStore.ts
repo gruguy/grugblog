@@ -65,10 +65,18 @@ export const useActivityStore = defineStore("activity", () => {
       const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
+      // 辅助函数：格式化日期为 YYYY-MM-DD 格式（使用本地时区）
+      const formatDate = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+
       for (let i = 0; i <= diffDays; i++) {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);
-        const formattedDate = date.toISOString().split("T")[0];
+        const formattedDate = formatDate(date);
         const count = activityMap.get(formattedDate) || 0;
 
         generatedData.push({

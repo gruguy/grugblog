@@ -6,19 +6,22 @@
     <article v-else-if="contentStore.currentArticle" class="max-w-4xl mx-auto">
       <header class="mb-8">
         <h1 class="text-4xl font-bold mb-2">
-          {{ 
-            contentStore.currentArticle.title || 
+          {{
+            contentStore.currentArticle.title ||
             `文章 ${contentStore.currentArticle.id}`
           }}
         </h1>
         <!-- 文章摘要 -->
         <p class="text-lg text-muted-foreground mb-4 max-w-3xl">
-          {{ 
-            contentStore.currentArticle.summary || 
+          {{
+            contentStore.currentArticle.summary ||
             contentStore.currentArticle.content
               .replace(/<[^>]+>/g, "")
-              .substring(0, 50) + 
-              (contentStore.currentArticle.content.replace(/<[^>]+>/g, "").length > 50 ? "..." : "")
+              .substring(0, 50) +
+              (contentStore.currentArticle.content.replace(/<[^>]+>/g, "")
+                .length > 50
+                ? "..."
+                : "")
           }}
         </p>
         <div class="flex items-center space-x-4 text-muted-foreground">
@@ -69,7 +72,7 @@
               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
             />
           </svg>
-          <span class="text-xs mt-1">{{ 
+          <span class="text-xs mt-1">{{
             contentStore.currentArticle.likes || 0
           }}</span>
         </button>
@@ -148,6 +151,7 @@
             :key="comment.id"
             :comment="comment"
             :on-reply="startReply"
+            @like="handleCommentLike"
           />
 
           <!-- 占位评论 -->
@@ -203,6 +207,7 @@ import { useContentStore } from "@/stores/contentStore";
 import { useUserStore } from "@/stores/userStore";
 import dayjs from "dayjs";
 import Comment from "@/components/Comment.vue";
+// 引入API
 import {
   toggleArticleLike,
   checkArticleLikeStatus,
@@ -210,7 +215,13 @@ import {
   checkArticleCollectStatus,
   getArticleComments,
   createArticleComment,
+  toggleCommentLike,
 } from "@/api/content";
+// 引入敏感词过滤工具
+import {
+  containsSensitiveWords,
+  filterSensitiveWords,
+} from "@/utils/sensitiveFilter";
 
 const route = useRoute();
 const contentStore = useContentStore();
@@ -344,17 +355,59 @@ const reportArticle = () => {
   }
 };
 
+// 处理评论点赞
+const handleCommentLike = async (commentId: number) => {
+  try {
+    // 调用后端API切换点赞状态
+    const response = await toggleCommentLike(commentId);
+
+    // 递归查找并更新评论
+    const updateCommentLike = (commentList: any[]) => {
+      for (const comment of commentList) {
+        if (comment.id === commentId) {
+          // 更新点赞状态和数量
+          comment.liked = response.liked;
+          comment.likes = response.likes;
+          return true;
+        }
+        if (comment.replies && updateCommentLike(comment.replies)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    updateCommentLike(comments.value);
+  } catch (error) {
+    console.error("评论点赞失败:", error);
+  }
+};
+
 // 提交评论
 const submitComment = async () => {
   if (!commentContent.value.trim()) return;
 
   const articleId = parseInt(route.params.id as string);
+  let commentText = commentContent.value.trim();
+
+  // 敏感词过滤检查
+  if (containsSensitiveWords(commentText)) {
+    const filteredText = filterSensitiveWords(commentText);
+    const confirmSubmit = confirm(
+      "您的评论中可能包含敏感词，已自动过滤。是否继续提交？"
+    );
+    if (!confirmSubmit) {
+      return;
+    }
+    commentText = filteredText;
+  }
 
   try {
     // 调用API提交评论
     const response = await createArticleComment({
-      content: commentContent.value.trim(),
-      author: userStore.user?.nickname || userStore.user?.username || "匿名用户",
+      content: commentText,
+      author:
+        userStore.user?.nickname || userStore.user?.username || "匿名用户",
       articleId,
       parentId: replyToCommentId.value,
     });

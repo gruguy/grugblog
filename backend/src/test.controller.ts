@@ -1,14 +1,14 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Param } from '@nestjs/common';
 
 @Controller('test')
 export class TestController {
   @Get()
-  getHello(): string {
-    return 'Hello World!';
+  getTest() {
+    return { message: 'GET test works' };
   }
 
-  @Post('register')
-  register(@Body() body: any): any {
-    return { message: 'Register works', body };
+  @Post(':id/like')
+  postTestLike(@Param('id') id: string) {
+    return { message: `POST test like ${id} works` };
   }
 }

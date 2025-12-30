@@ -449,11 +449,23 @@ const handleAvatarUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files.length > 0) {
     const file = input.files[0];
-    // 这里需要实现头像上传逻辑
-    console.log("上传头像:", file);
-    // 实际项目中应该调用上传API，然后更新用户头像
-    // await userStore.updateAvatar(file)
-    alert("头像上传功能还未实现");
+    try {
+      // 调用上传API
+      const { uploadFile } = await import('@/api/upload');
+      const uploadResult = await uploadFile(file);
+      
+      // 更新用户头像
+      await updateUserInfo({ avatar: uploadResult.url });
+      
+      // 重新获取用户信息，更新store
+      await fetchUserInfo();
+      
+      // 清空文件输入，以便可以重新选择同一文件
+      input.value = '';
+    } catch (error) {
+      console.error('头像上传失败:', error);
+      alert('头像上传失败，请重试');
+    }
   }
 };
 

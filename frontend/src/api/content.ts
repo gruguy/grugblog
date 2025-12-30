@@ -143,6 +143,19 @@ export const createArticleComment = (data: {
   return request.post<any>(`/comments`, data);
 };
 
+// 切换评论点赞状态
+export const toggleCommentLike = (commentId: number): Promise<{
+  id: number;
+  liked: boolean;
+  likes: number;
+}> => {
+  return request.post<{
+    id: number;
+    liked: boolean;
+    likes: number;
+  }>(`/comments/${commentId}/like`);
+};
+
 // 保存文章草稿
 export const saveArticleDraft = (data: {
   title: string;

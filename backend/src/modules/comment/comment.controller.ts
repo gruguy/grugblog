@@ -54,4 +54,13 @@ export class CommentController {
     const userId = req.user.id;
     return this.commentService.remove(parseInt(id), userId);
   }
+
+  @Public()
+  @Post(":id/like")
+  @ApiOperation({ summary: "切换评论点赞状态" })
+  async toggleLike(@Param("id") id: string, @Request() req) {
+    // 允许匿名点赞，使用默认userId=0
+    const userId = req.user?.id || 0;
+    return this.commentService.toggleLike(parseInt(id), userId);
+  }
 }

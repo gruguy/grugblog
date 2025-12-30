@@ -340,20 +340,20 @@ const recommendedArticles = computed(() => {
     .slice(0, 3);
 });
 
-// 计算属性：当前分类的文章，先按时间排序，再按阅读量和点赞量的和排序
+// 计算属性：当前分类的文章，先按点赞+阅读量之和排序，再按发表时间排序
 const articles = computed(() => {
-  return [...contentStore.articles].sort((a, b) => {
-    // 首先按创建时间降序排序
-    const timeDiff =
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    if (timeDiff !== 0) {
-      return timeDiff;
-    }
-    // 时间相同则按阅读量+点赞量的和降序排序
-    const totalA = (a.views || 0) + (a.likes || 0);
-    const totalB = (b.views || 0) + (b.likes || 0);
-    return totalB - totalA;
-  });
+  return [...contentStore.articles]
+    .sort((a, b) => {
+      // 首先按阅读量+点赞量之和降序排序（权重更高）
+      const totalA = (a.views || 0) + (a.likes || 0);
+      const totalB = (b.views || 0) + (b.likes || 0);
+      const totalDiff = totalB - totalA;
+      if (totalDiff !== 0) {
+        return totalDiff;
+      }
+      // 点赞+阅读量相同时，按创建时间降序排序
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 });
 
 // 计算属性：总文章数量（使用独立的变量来存储，避免切换分类时变化）

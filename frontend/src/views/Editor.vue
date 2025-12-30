@@ -2,12 +2,23 @@
   <div class="editor-container">
     <!-- 顶部工具栏 -->
     <div class="editor-header">
-      <input
-        type="text"
-        v-model="title"
-        placeholder="输入文章标题..."
-        class="title-input"
-      />
+      <div class="title-container">
+        <input
+          type="text"
+          v-model="title"
+          placeholder="输入文章标题..."
+          class="title-input"
+        />
+        <button
+          class="ai-write-btn"
+          @click="handleAiWrite"
+          :disabled="generatingContent"
+          title="AI帮我写"
+        >
+          <span v-if="generatingContent">生成中...</span>
+          <span v-else>AI帮我写</span>
+        </button>
+      </div>
       <div class="category-selector">
         <select
           v-model="selectedCategory"
@@ -266,6 +277,10 @@ import { useUserStore } from "@/stores/userStore";
 import { useRouter } from "vue-router";
 import { publishArticle, saveArticleDraft, getCategories } from "@/api/content";
 import { message } from "@/utils/alertUtils";
+import {
+  containsSensitiveWords,
+  filterSensitiveWords,
+} from "@/utils/sensitiveFilter";
 
 const userStore = useUserStore();
 const router = useRouter();
@@ -294,6 +309,7 @@ const stats = ref({
 // 加载状态
 const publishing = ref(false);
 const savingDraft = ref(false);
+const generatingContent = ref(false);
 
 // 处理输入
 const handleInput = () => {
@@ -353,11 +369,32 @@ const handleSaveDraft = async () => {
     return;
   }
 
+  // 敏感词过滤检查
+  const titleHasSensitive = containsSensitiveWords(title.value);
+  const contentHasSensitive = containsSensitiveWords(content.value);
+
+  let saveTitle = title.value;
+  let saveContent = content.value;
+
+  if (titleHasSensitive || contentHasSensitive) {
+    // 过滤敏感词
+    saveTitle = filterSensitiveWords(title.value);
+    saveContent = filterSensitiveWords(content.value);
+
+    // 提示用户
+    const confirmSave = confirm(
+      "您的文章中可能包含敏感词，已自动过滤。是否继续保存？"
+    );
+    if (!confirmSave) {
+      return;
+    }
+  }
+
   savingDraft.value = true;
   try {
     await saveArticleDraft({
-      title: title.value.trim() || "未命名草稿",
-      content: content.value,
+      title: saveTitle.trim() || "未命名草稿",
+      content: saveContent,
       status: "draft",
       categoryId: selectedCategory.value,
     });
@@ -370,6 +407,57 @@ const handleSaveDraft = async () => {
   }
 };
 
+// AI帮我写文章内容
+const handleAiWrite = async () => {
+  if (!title.value.trim()) {
+    message.warning("请先输入文章标题");
+    return;
+  }
+
+  generatingContent.value = true;
+  try {
+    // 获取AI接口地址
+    const aiApiUrl =
+      import.meta.env.VITE_AI_API_URL || "http://localhost:11434/api/generate";
+
+    // 调用AI接口
+    const response = await fetch(aiApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "deepseek-r1:32b",
+        prompt: `请帮我写一篇关于"${title.value}"的博客文章，内容要丰富，结构清晰，语言流畅。`,
+        stream: false, // 暂时不使用流式输出
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI接口请求失败: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // 将AI生成的内容插入到编辑器中
+    if (data.response) {
+      content.value = data.response;
+      if (editorInput.value) {
+        editorInput.value.innerHTML = content.value;
+        updatePreview();
+        updateStats();
+      }
+    }
+
+    message.success("AI生成内容成功");
+  } catch (error: any) {
+    console.error("AI生成内容失败:", error);
+    message.error("AI生成内容失败，请重试");
+  } finally {
+    generatingContent.value = false;
+  }
+};
+
 // 发表文章
 const handlePublish = async () => {
   if (!title.value.trim()) {
@@ -379,6 +467,28 @@ const handlePublish = async () => {
   if (!content.value.trim()) {
     message.warning("请输入文章内容");
     return;
+  }
+
+  // 敏感词过滤检查
+  const titleHasSensitive = containsSensitiveWords(title.value);
+  const contentHasSensitive = containsSensitiveWords(content.value);
+
+  if (titleHasSensitive || contentHasSensitive) {
+    // 过滤敏感词
+    const filteredTitle = filterSensitiveWords(title.value);
+    const filteredContent = filterSensitiveWords(content.value);
+
+    // 提示用户
+    const confirmPublish = confirm(
+      "您的文章中可能包含敏感词，已自动过滤。是否继续发布？"
+    );
+    if (!confirmPublish) {
+      return;
+    }
+
+    // 使用过滤后的内容发布
+    content.value = filteredContent;
+    title.value = filteredTitle;
   }
 
   publishing.value = true;
@@ -470,6 +580,14 @@ onMounted(async () => {
   border-bottom: 1px solid #e0e0e0;
 }
 
+.title-container {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-right: 24px;
+}
+
 .title-input {
   flex: 1;
   font-size: 24px;
@@ -477,9 +595,29 @@ onMounted(async () => {
   border: none;
   outline: none;
   padding: 8px 16px;
-  margin-right: 24px;
   background-color: #f8f9fa;
   border-radius: 4px;
+}
+
+.ai-write-btn {
+  padding: 8px 16px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.ai-write-btn:hover {
+  background-color: #66b1ff;
+}
+
+.ai-write-btn:disabled {
+  background-color: #a0cfff;
+  cursor: not-allowed;
 }
 
 .category-selector {

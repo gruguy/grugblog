@@ -51,4 +51,10 @@ export class Comment {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ default: 0 })
+  likes: number;
+
+  @Column({ default: false })
+  liked: boolean;
 }
