@@ -7,13 +7,16 @@ services:
     container_name: blog-frontend
     ports:
       - "80:80"
-    volumes:
-      - ./frontend/dist:/usr/share/nginx/html
     depends_on:
       - backend
     networks:
       - blog-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # 后台管理前端
   admin:
@@ -21,13 +24,16 @@ services:
     container_name: blog-admin
     ports:
       - "81:80"
-    volumes:
-      - ./admin/dist:/usr/share/nginx/html
     depends_on:
       - backend
     networks:
       - blog-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # 后端服务
   backend:
@@ -39,12 +45,12 @@ services:
       - NODE_ENV=production
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=123456
-      - MYSQL_DB=blog
+      - MYSQL_USER=${MYSQL_USER:-root}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-123456}
+      - MYSQL_DB=${MYSQL_DB:-blog}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - JWT_SECRET=your_jwt_secret_key_change_in_production
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_change_in_production}
     volumes:
       - ./backend/uploads:/app/uploads
     depends_on:
@@ -53,6 +59,11 @@ services:
     networks:
       - blog-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # MySQL数据库
   mysql:
@@ -61,8 +72,8 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=123456
-      - MYSQL_DATABASE=blog
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD:-123456}
+      - MYSQL_DATABASE=${MYSQL_DB:-blog}
     volumes:
       - ./data/mysql:/var/lib/mysql
       - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -70,6 +81,11 @@ services:
       - blog-network
     restart: unless-stopped
     command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Redis缓存
   redis:
@@ -83,6 +99,11 @@ services:
       - blog-network
     restart: unless-stopped
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   blog-network:

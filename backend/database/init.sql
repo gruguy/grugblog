@@ -1,8 +1,8 @@
--- ============================================
+-- ============================================  
 -- 个人博客系统数据库初始化脚本
 -- ============================================
--- 数据库版本: 1.0.0
--- 创建时间: 2024-12-22
+-- 数据库版本: 1.1.0
+-- 创建时间: 2025-12-30
 -- 字符集: utf8mb4
 -- 排序规则: utf8mb4_unicode_ci
 -- ============================================
@@ -100,7 +100,81 @@ CREATE TABLE `article_tag` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章标签关联表';
 
 -- ============================================
--- 6. 音乐表
+-- 6. 评论表
+-- ============================================
+DROP TABLE IF EXISTS `comment`;
+CREATE TABLE `comment` (
+  `id` INT NOT NULL AUTO_INCREMENT COMMENT '评论ID',
+  `content` TEXT NOT NULL COMMENT '评论内容',
+  `author` VARCHAR(50) NOT NULL COMMENT '评论作者',
+  `articleId` INT NOT NULL COMMENT '文章ID',
+  `userId` INT NOT NULL COMMENT '用户ID',
+  `parentId` INT DEFAULT NULL COMMENT '父评论ID',
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_articleId` (`articleId`),
+  KEY `idx_userId` (`userId`),
+  KEY `idx_parentId` (`parentId`),
+  KEY `idx_createdAt` (`createdAt`),
+  CONSTRAINT `fk_comment_article` FOREIGN KEY (`articleId`) REFERENCES `article` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_comment_user` FOREIGN KEY (`userId`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_comment_parent` FOREIGN KEY (`parentId`) REFERENCES `comment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表';
+
+-- ============================================
+-- 7. 文章点赞表
+-- ============================================
+DROP TABLE IF EXISTS `article_like`;
+CREATE TABLE `article_like` (
+  `id` INT NOT NULL AUTO_INCREMENT COMMENT '点赞ID',
+  `userId` INT NOT NULL COMMENT '用户ID',
+  `articleId` INT NOT NULL COMMENT '文章ID',
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_article` (`userId`, `articleId`),
+  KEY `idx_articleId` (`articleId`),
+  KEY `idx_createdAt` (`createdAt`),
+  CONSTRAINT `fk_like_user` FOREIGN KEY (`userId`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_like_article` FOREIGN KEY (`articleId`) REFERENCES `article` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章点赞表';
+
+-- ============================================
+-- 8. 文章收藏表
+-- ============================================
+DROP TABLE IF EXISTS `article_collect`;
+CREATE TABLE `article_collect` (
+  `id` INT NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
+  `userId` INT NOT NULL COMMENT '用户ID',
+  `articleId` INT NOT NULL COMMENT '文章ID',
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_article` (`userId`, `articleId`),
+  KEY `idx_articleId` (`articleId`),
+  KEY `idx_createdAt` (`createdAt`),
+  CONSTRAINT `fk_collect_user` FOREIGN KEY (`userId`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_collect_article` FOREIGN KEY (`articleId`) REFERENCES `article` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章收藏表';
+
+-- ============================================
+-- 9. 用户关注表
+-- ============================================
+DROP TABLE IF EXISTS `user_follow`;
+CREATE TABLE `user_follow` (
+  `id` INT NOT NULL AUTO_INCREMENT COMMENT '关注ID',
+  `userId` INT NOT NULL COMMENT '关注者ID',
+  `followingId` INT NOT NULL COMMENT '被关注者ID',
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_following` (`userId`, `followingId`),
+  KEY `idx_followingId` (`followingId`),
+  KEY `idx_createdAt` (`createdAt`),
+  CONSTRAINT `fk_follow_user` FOREIGN KEY (`userId`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_follow_following` FOREIGN KEY (`followingId`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户关注表';
+
+-- ============================================
+-- 10. 音乐表
 -- ============================================
 DROP TABLE IF EXISTS `music`;
 CREATE TABLE `music` (
@@ -119,7 +193,7 @@ CREATE TABLE `music` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='音乐表';
 
 -- ============================================
--- 7. 图片表
+-- 11. 图片表
 -- ============================================
 DROP TABLE IF EXISTS `image`;
 CREATE TABLE `image` (
@@ -137,7 +211,7 @@ CREATE TABLE `image` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='图片表';
 
 -- ============================================
--- 8. 视频表
+-- 12. 视频表
 -- ============================================
 DROP TABLE IF EXISTS `video`;
 CREATE TABLE `video` (
@@ -156,7 +230,7 @@ CREATE TABLE `video` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='视频表';
 
 -- ============================================
--- 9. 主题表
+-- 13. 主题表
 -- ============================================
 DROP TABLE IF EXISTS `theme`;
 CREATE TABLE `theme` (
@@ -174,7 +248,7 @@ CREATE TABLE `theme` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='主题表';
 
 -- ============================================
--- 10. 系统配置表
+-- 14. 系统配置表
 -- ============================================
 DROP TABLE IF EXISTS `system_config`;
 CREATE TABLE `system_config` (
@@ -188,7 +262,7 @@ CREATE TABLE `system_config` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
 
 -- ============================================
--- 11. 访问日志表（可选，用于统计分析）
+-- 15. 访问日志表（可选，用于统计分析）
 -- ============================================
 DROP TABLE IF EXISTS `visit_log`;
 CREATE TABLE `visit_log` (
