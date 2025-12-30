@@ -21,7 +21,7 @@ jobs:
           port: ${{ secrets.REMOTE_SERVER_PORT || '22' }}
           script: |
             # 进入项目目录
-            cd /path/to/your/project  # 替换为你的项目路径
+            cd /var/www/gruguy-blog  # 替换为你的项目路径
 
             # 拉取最新代码
             git pull origin main
