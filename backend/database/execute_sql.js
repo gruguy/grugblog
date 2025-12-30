@@ -1,6 +1,4 @@
 const mysql = require("mysql2/promise");
-const fs = require("fs");
-const path = require("path");
 
 async function executeSQL() {
   try {
@@ -15,15 +13,36 @@ async function executeSQL() {
 
     console.log("数据库连接成功");
 
-    // 读取并执行fix_comment_table.sql文件
-    const fixCommentSqlPath = path.join(__dirname, "fix_comment_table.sql");
-    const fixCommentSqlContent = fs.readFileSync(fixCommentSqlPath, "utf8");
-    await executeSqlFile(connection, fixCommentSqlContent, "fix_comment_table.sql");
+    // 执行SQL语句 - 分开执行每个语句
+    const sqlStatements = [
+      // 修复system_config表中的重复空key值
+      `UPDATE \`system_config\` SET \`key\` = 'empty_key_fix' WHERE \`key\` = ''`,
 
-    // 读取并执行create_like_collect_tables.sql文件
-    const likeCollectSqlPath = path.join(__dirname, "create_like_collect_tables.sql");
-    const likeCollectSqlContent = fs.readFileSync(likeCollectSqlPath, "utf8");
-    await executeSqlFile(connection, likeCollectSqlContent, "create_like_collect_tables.sql");
+      // 创建comment表
+      `DROP TABLE IF EXISTS \`comment\``,
+
+      `CREATE TABLE \`comment\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT COMMENT '评论ID',
+        \`content\` TEXT NOT NULL COMMENT '评论内容',
+        \`author\` VARCHAR(50) NOT NULL COMMENT '评论作者',
+        \`articleId\` INT NOT NULL COMMENT '文章ID',
+        \`userId\` INT NOT NULL COMMENT '用户ID',
+        \`parentId\` INT NULL DEFAULT NULL COMMENT '父评论ID，用于回复功能',
+        \`createdAt\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+        \`updatedAt\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+        PRIMARY KEY (\`id\`),
+        KEY \`idx_articleId\` (\`articleId\`),
+        KEY \`idx_userId\` (\`userId\`),
+        KEY \`idx_parentId\` (\`parentId\`),
+        KEY \`idx_createdAt\` (\`createdAt\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表'`,
+    ];
+
+    // 依次执行每个SQL语句
+    for (const sql of sqlStatements) {
+      await connection.query(sql);
+      console.log("执行SQL成功:", sql.substring(0, 50) + "...");
+    }
 
     console.log("所有SQL执行成功");
 
@@ -33,21 +52,6 @@ async function executeSQL() {
   } catch (error) {
     console.error("执行SQL失败:", error);
     process.exit(1);
-  }
-}
-
-async function executeSqlFile(connection, sqlContent, fileName) {
-  // 分割SQL语句（按分号分割，但要注意字符串中的分号）
-  const sqlStatements = sqlContent
-    .replace(/\\'/g, "''") // 处理转义引号
-    .split(/;(?=\s*$)/m) // 按分号分割，只匹配行尾的分号
-    .filter((statement) => statement.trim() !== "") // 过滤空语句
-    .map((statement) => statement.trim() + ";"); // 确保每个语句都以分号结尾
-
-  // 依次执行每个SQL语句
-  for (const sql of sqlStatements) {
-    await connection.query(sql);
-    console.log(`执行${fileName}成功:`, sql.substring(0, 50) + "...");
   }
 }
 
