@@ -1,10 +1,15 @@
--- ============================================  
+-- ============================================
 -- 个人博客系统数据库初始化脚本
 -- ============================================
--- 数据库版本: 1.1.0
--- 创建时间: 2025-12-30
+-- 数据库版本: 1.2.0
+-- 创建时间: 2025-12-31
 -- 字符集: utf8mb4
 -- 排序规则: utf8mb4_unicode_ci
+-- ============================================
+-- 更新内容:
+-- 1. 在comment表中添加了avatar字段，用于存储评论者头像URL
+-- 2. 在comment表中添加了likes字段，用于存储评论点赞数
+-- 3. 在comment表中添加了liked字段，用于存储评论点赞状态
 -- ============================================
 
 -- 创建数据库（如果不存在）
@@ -110,6 +115,9 @@ CREATE TABLE `comment` (
   `articleId` INT NOT NULL COMMENT '文章ID',
   `userId` INT NOT NULL COMMENT '用户ID',
   `parentId` INT DEFAULT NULL COMMENT '父评论ID',
+  `avatar` VARCHAR(255) DEFAULT NULL COMMENT '评论者头像URL',
+  `likes` INT NOT NULL DEFAULT 0 COMMENT '点赞数',
+  `liked` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已点赞',
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
