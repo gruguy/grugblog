@@ -281,6 +281,7 @@ import {
   containsSensitiveWords,
   filterSensitiveWords,
 } from "@/utils/sensitiveFilter";
+import { marked } from "marked";
 
 const userStore = useUserStore();
 const router = useRouter();
@@ -315,14 +316,16 @@ const generatingContent = ref(false);
 const handleInput = () => {
   if (!editorInput.value) return;
 
-  content.value = editorInput.value.innerHTML;
+  // 获取编辑区的文本内容作为原始markdown
+  content.value = editorInput.value.innerText;
   updatePreview();
   updateStats();
 };
 
 // 更新预览
-const updatePreview = () => {
-  previewContent.value = content.value;
+const updatePreview = async () => {
+  // 使用marked将markdown转换为HTML
+  previewContent.value = content.value ? await marked.parse(content.value) : "";
 };
 
 // 更新统计信息
@@ -418,7 +421,16 @@ const handleAiWrite = async () => {
   try {
     // 获取AI接口地址
     const aiApiUrl =
-      import.meta.env.VITE_AI_API_URL || "http://localhost:11434/api/generate";
+      import.meta.env.VITE_AI_API_URL ||
+      "http://61.171.115.123:11434/api/generate";
+
+    // 清空编辑器内容
+    content.value = "";
+    if (editorInput.value) {
+      editorInput.value.innerHTML = "";
+      updatePreview();
+      updateStats();
+    }
 
     // 调用AI接口
     const response = await fetch(aiApiUrl, {
@@ -429,7 +441,7 @@ const handleAiWrite = async () => {
       body: JSON.stringify({
         model: "deepseek-r1:32b",
         prompt: `请帮我写一篇关于"${title.value}"的博客文章，内容要丰富，结构清晰，语言流畅。`,
-        stream: false, // 暂时不使用流式输出
+        stream: true, // 使用流式输出
       }),
     });
 
@@ -437,15 +449,53 @@ const handleAiWrite = async () => {
       throw new Error(`AI接口请求失败: ${response.status}`);
     }
 
-    const data = await response.json();
+    // 检查是否支持流式响应
+    if (!response.body) {
+      throw new Error("服务器不支持流式响应");
+    }
 
-    // 将AI生成的内容插入到编辑器中
-    if (data.response) {
-      content.value = data.response;
-      if (editorInput.value) {
-        editorInput.value.innerHTML = content.value;
-        updatePreview();
-        updateStats();
+    // 创建文本解码器
+    const decoder = new TextDecoder("utf-8");
+    // 获取可读流
+    const reader = response.body.getReader();
+    // 用于存储生成的内容
+    let generatedContent = "";
+
+    // 循环读取流数据
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      // 解码流数据
+      const chunk = decoder.decode(value, { stream: true });
+      // 分割JSON行
+      const lines = chunk.split("\n");
+
+      // 处理每一行JSON数据
+      for (const line of lines) {
+        if (line.trim()) {
+          try {
+            // 解析JSON数据
+            const jsonData = JSON.parse(line.replace(/^data: /, ""));
+            // 如果有响应内容，添加到生成的内容中
+            if (jsonData.response) {
+              generatedContent += jsonData.response;
+              // 更新编辑器内容
+              content.value = generatedContent;
+              if (editorInput.value) {
+                // 编辑区显示原始markdown文本
+                editorInput.value.innerText = generatedContent;
+                // 更新预览（会自动转换为HTML）
+                updatePreview();
+                updateStats();
+              }
+            }
+          } catch (error) {
+            console.error("解析JSON数据失败:", error);
+          }
+        }
       }
     }
 
@@ -744,6 +794,136 @@ onMounted(async () => {
 }
 
 .editor-preview {
+  background-color: #fafafa;
+}
+
+/* 预览区样式 */
+.editor-preview :deep(h1) {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 24px 0 16px;
+  color: #2c3e50;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 8px;
+}
+
+.editor-preview :deep(h2) {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 20px 0 14px;
+  color: #34495e;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 6px;
+}
+
+.editor-preview :deep(h3) {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 18px 0 12px;
+  color: #34495e;
+}
+
+.editor-preview :deep(h4) {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 16px 0 10px;
+  color: #34495e;
+}
+
+.editor-preview :deep(h5) {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 14px 0 8px;
+  color: #34495e;
+}
+
+.editor-preview :deep(h6) {
+  font-size: 14px;
+  font-weight: bold;
+  margin: 12px 0 6px;
+  color: #34495e;
+}
+
+.editor-preview :deep(p) {
+  margin: 12px 0;
+  line-height: 1.6;
+}
+
+.editor-preview :deep(ul),
+.editor-preview :deep(ol) {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.editor-preview :deep(li) {
+  margin: 6px 0;
+}
+
+.editor-preview :deep(code) {
+  background-color: #f0f0f0;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 14px;
+}
+
+.editor-preview :deep(pre) {
+  background-color: #f5f5f5;
+  padding: 16px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.editor-preview :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+.editor-preview :deep(blockquote) {
+  border-left: 4px solid #3498db;
+  padding: 12px 16px;
+  margin: 12px 0;
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+.editor-preview :deep(a) {
+  color: #3498db;
+  text-decoration: none;
+}
+
+.editor-preview :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.editor-preview :deep(img) {
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0;
+  border-radius: 4px;
+}
+
+.editor-preview :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.editor-preview :deep(th),
+.editor-preview :deep(td) {
+  border: 1px solid #e0e0e0;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.editor-preview :deep(th) {
+  background-color: #f5f5f5;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.editor-preview :deep(tr:nth-child(even)) {
   background-color: #fafafa;
 }
 

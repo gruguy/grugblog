@@ -31,6 +31,9 @@ export class Comment {
   @Column({ nullable: true })
   parentId: number | null;
 
+  @Column({ nullable: true })
+  avatar: string;
+
   @ManyToOne(() => Article, { nullable: true })
   @JoinColumn({ name: "articleId" })
   article: Article | null;

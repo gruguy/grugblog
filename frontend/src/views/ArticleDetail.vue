@@ -177,12 +177,45 @@
               取消回复
             </button>
           </div>
-          <textarea
-            v-model="commentContent"
-            placeholder="请输入评论内容..."
-            class="w-full p-3 border border-border rounded-lg mb-3"
-            rows="3"
-          ></textarea>
+          <div class="relative mb-3">
+            <!-- 评论输入框 -->
+            <textarea
+              ref="commentTextarea"
+              v-model="commentContent"
+              placeholder="请输入评论内容..."
+              class="w-full p-3 border border-border rounded-lg"
+              rows="3"
+            ></textarea>
+            <!-- 表情按钮 -->
+            <div class="absolute bottom-3 right-3 flex items-center gap-2">
+              <button
+                @click="toggleEmojiPicker"
+                class="text-muted-foreground hover:text-foreground"
+                title="表情"
+              >
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.43 9.57c-.14.14-.33.21-.53.21-.2 0-.39-.07-.53-.21l-1.41-1.41-1.41 1.41c-.14.14-.33.21-.53.21-.2 0-.39-.07-.53-.21-.28-.28-.28-.73 0-1.01l1.41-1.41-1.41-1.41c-.28-.28-.28-.73 0-1.01s.73-.28 1.01 0l1.41 1.41 1.41-1.41c.28-.28.73-.28 1.01 0 .28.28.28.73 0 1.01l-1.41 1.41 1.41 1.41c.28.28.28.73 0 1.01zM9 13h2v2H9zm3-6h-2v2h2zm-6 0H5v2h1zm0 4H5v2h1zm0 4H5v2h1z"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+            <!-- 表情选择器 -->
+            <div
+              v-if="showEmojiPicker"
+              class="absolute bottom-full right-0 mb-2 bg-card rounded-lg border border-border shadow-lg p-2 grid grid-cols-8 gap-2 w-64 max-h-60 overflow-y-auto"
+            >
+              <button
+                v-for="emoji in emojis"
+                :key="emoji"
+                @click="insertEmoji(emoji)"
+                class="text-xl p-1 rounded hover:bg-muted transition-colors"
+                title="插入表情"
+              >
+                {{ emoji }}
+              </button>
+            </div>
+          </div>
           <div class="flex justify-end">
             <button
               @click="submitComment"
@@ -244,6 +277,108 @@ const comments = ref<any[]>([]);
 const commentContent = ref("");
 const replyToCommentId = ref<number | null>(null);
 const replyToAuthor = ref("");
+const commentTextarea = ref<HTMLTextAreaElement | null>(null);
+const showEmojiPicker = ref(false);
+
+// 常用表情列表
+const emojis = ref([
+  "😀",
+  "😃",
+  "😄",
+  "😁",
+  "😆",
+  "😅",
+  "😂",
+  "🤣",
+  "😊",
+  "😇",
+  "🙂",
+  "🙃",
+  "😉",
+  "😌",
+  "😍",
+  "🥰",
+  "😘",
+  "😗",
+  "😙",
+  "😚",
+  "😋",
+  "😛",
+  "😝",
+  "😜",
+  "🤪",
+  "🤨",
+  "🧐",
+  "🤓",
+  "😎",
+  "🤩",
+  "🥳",
+  "😏",
+  "😒",
+  "😞",
+  "😔",
+  "😟",
+  "😕",
+  "🙁",
+  "☹️",
+  "😣",
+  "😖",
+  "😫",
+  "😩",
+  "🥺",
+  "😢",
+  "😭",
+  "😤",
+  "😠",
+  "😡",
+  "🤬",
+  "🤯",
+  "😳",
+  "🥵",
+  "🥶",
+  "😱",
+  "😨",
+  "😰",
+  "😥",
+  "😓",
+  "🤗",
+  "🤔",
+  "🤭",
+  "🤫",
+  "🤥",
+  "😶",
+  "😐",
+  "😑",
+  "😬",
+  "🙄",
+  "😯",
+  "😦",
+  "😧",
+  "😮",
+  "😲",
+  "🥱",
+  "😴",
+  "🤤",
+  "😪",
+  "😵",
+  "🤐",
+  "🥴",
+  "🤢",
+  "🤮",
+  "🤧",
+  "😷",
+  "🤒",
+  "🤕",
+  "🤑",
+  "🤠",
+  "😈",
+  "👿",
+  "👹",
+  "👺",
+  "🤡",
+  "💩",
+  "👻",
+]);
 
 // 格式化日期为相对时间
 const formatDate = (date: string) => {
@@ -274,6 +409,10 @@ const startReply = (comment: any) => {
   replyToCommentId.value = comment.id;
   replyToAuthor.value = comment.author;
   commentContent.value = `@${comment.author} `;
+  // 跳转到评论框并获得焦点
+  setTimeout(() => {
+    commentTextarea.value?.focus();
+  }, 100);
 };
 
 // 取消回复
@@ -281,6 +420,40 @@ const cancelReply = () => {
   replyToCommentId.value = null;
   replyToAuthor.value = "";
   commentContent.value = "";
+};
+
+// 切换表情选择器
+const toggleEmojiPicker = () => {
+  showEmojiPicker.value = !showEmojiPicker.value;
+};
+
+// 插入表情
+const insertEmoji = (emoji: string) => {
+  if (commentTextarea.value) {
+    // 获取当前光标位置
+    const start = commentTextarea.value.selectionStart;
+    const end = commentTextarea.value.selectionEnd;
+    const text = commentTextarea.value.value;
+
+    // 插入表情
+    commentContent.value = text.slice(0, start) + emoji + text.slice(end);
+
+    // 关闭表情选择器
+    showEmojiPicker.value = false;
+
+    // 恢复焦点并设置光标位置
+    setTimeout(() => {
+      commentTextarea.value?.focus();
+      if (commentTextarea.value) {
+        commentTextarea.value.selectionStart =
+          commentTextarea.value.selectionEnd = start + emoji.length;
+      }
+    }, 100);
+  } else {
+    // 如果没有textarea引用，直接添加到内容末尾
+    commentContent.value += emoji;
+    showEmojiPicker.value = false;
+  }
 };
 
 // 点赞功能
@@ -403,6 +576,16 @@ const submitComment = async () => {
   }
 
   try {
+    // 添加调试信息，查看提交的评论数据
+    console.log("提交评论数据:", {
+      content: commentText,
+      author:
+        userStore.user?.nickname || userStore.user?.username || "匿名用户",
+      articleId,
+      parentId: replyToCommentId.value,
+      avatar: userStore.user?.avatar,
+    });
+
     // 调用API提交评论
     const response = await createArticleComment({
       content: commentText,
@@ -410,7 +593,10 @@ const submitComment = async () => {
         userStore.user?.nickname || userStore.user?.username || "匿名用户",
       articleId,
       parentId: replyToCommentId.value,
+      avatar: userStore.user?.avatar,
     });
+
+    console.log("评论提交响应:", response);
 
     // 添加到评论列表或回复列表
     if (replyToCommentId.value) {
@@ -492,25 +678,138 @@ onMounted(async () => {
 /* 自定义文章内容样式 */
 .prose {
   color: var(--text-foreground);
+  line-height: 1.8;
 }
 
-.prose :deep(h1),
-.prose :deep(h2),
-.prose :deep(h3),
-.prose :deep(h4),
-.prose :deep(h5),
-.prose :deep(h6) {
+.prose :deep(h1) {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 24px 0 16px;
+  color: var(--text-foreground);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.prose :deep(h2) {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 20px 0 14px;
+  color: var(--text-foreground);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.prose :deep(h3) {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 18px 0 12px;
   color: var(--text-foreground);
 }
 
-.prose :deep(pre) {
-  background-color: var(--card);
-  border: 1px solid var(--border);
+.prose :deep(h4) {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 16px 0 10px;
+  color: var(--text-foreground);
+}
+
+.prose :deep(h5) {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 14px 0 8px;
+  color: var(--text-foreground);
+}
+
+.prose :deep(h6) {
+  font-size: 14px;
+  font-weight: bold;
+  margin: 12px 0 6px;
+  color: var(--text-foreground);
+}
+
+.prose :deep(p) {
+  margin: 12px 0;
+  line-height: 1.8;
+}
+
+.prose :deep(ul),
+.prose :deep(ol) {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.prose :deep(li) {
+  margin: 6px 0;
 }
 
 .prose :deep(code) {
   background-color: var(--muted);
   color: var(--text-foreground);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 14px;
+}
+
+.prose :deep(pre) {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.prose :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+.prose :deep(blockquote) {
+  border-left: 4px solid var(--primary);
+  padding: 12px 16px;
+  margin: 12px 0;
+  background-color: var(--muted);
+  color: var(--text-foreground);
+}
+
+.prose :deep(a) {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.prose :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.prose :deep(img) {
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0;
+  border-radius: 4px;
+}
+
+.prose :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.prose :deep(th),
+.prose :deep(td) {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.prose :deep(th) {
+  background-color: var(--muted);
+  font-weight: bold;
+  color: var(--text-foreground);
+}
+
+.prose :deep(tr:nth-child(even)) {
+  background-color: var(--muted);
 }
 
 /* 平滑过渡动画 */

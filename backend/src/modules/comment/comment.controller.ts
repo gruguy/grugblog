@@ -22,12 +22,23 @@ export class CommentController {
   @Post()
   @ApiOperation({ summary: "创建评论" })
   async create(
+    @Request() req,
     @Body("content") content: string,
     @Body("author") author: string,
     @Body("articleId") articleId: number,
-    @Request() req,
-    @Body("parentId") parentId?: number | null
+    @Body("parentId") parentId?: number | null,
+    @Body("avatar") avatar?: string
   ) {
+    // 添加调试日志，查看接收到的所有参数
+    console.log("接收到的评论参数:", {
+      content,
+      author,
+      articleId,
+      parentId,
+      avatar,
+      userId: req.user?.id,
+    });
+
     // 允许匿名评论，使用默认userId=0
     const userId = req.user?.id || 0;
     return this.commentService.create(
@@ -35,7 +46,8 @@ export class CommentController {
       author,
       articleId,
       userId,
-      parentId
+      parentId,
+      avatar
     );
   }
 

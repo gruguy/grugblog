@@ -3,14 +3,14 @@
     <div class="flex items-start gap-3">
       <!-- 评论头像 -->
       <div
-        v-if="!comment.avatar"
+        v-if="!comment.user?.avatar && !comment.avatar"
         class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-medium text-xs border border-border"
       >
         {{ comment.author.charAt(0).toUpperCase() }}
       </div>
       <img
         v-else
-        :src="comment.avatar"
+        :src="comment.user?.avatar || comment.avatar"
         alt="头像"
         class="w-8 h-8 rounded-full object-cover border border-border"
       />
@@ -101,6 +101,9 @@ interface CommentProps {
     content: string;
     author: string;
     avatar?: string;
+    user?: {
+      avatar?: string;
+    };
     createdAt: string;
     likes: number;
     liked: boolean;
@@ -180,6 +183,9 @@ const onReplyClick = () => {
     emit("reply", props.comment);
   }
 };
+
+// 添加调试信息，查看comment对象结构
+console.log("Comment data:", props.comment);
 
 // 处理点赞点击事件
 const onLikeClick = () => {

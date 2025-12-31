@@ -139,12 +139,15 @@ export const createArticleComment = (data: {
   author: string;
   articleId: number;
   parentId?: number | null;
+  avatar?: string;
 }): Promise<any> => {
   return request.post<any>(`/comments`, data);
 };
 
 // 切换评论点赞状态
-export const toggleCommentLike = (commentId: number): Promise<{
+export const toggleCommentLike = (
+  commentId: number
+): Promise<{
   id: number;
   liked: boolean;
   likes: number;
