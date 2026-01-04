@@ -9,6 +9,7 @@ export interface Article {
   tags?: Tag[];
   views: number;
   likes?: number;
+  collects?: number;
   author?: {
     username: string;
     nickname?: string;

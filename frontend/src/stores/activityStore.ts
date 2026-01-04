@@ -28,9 +28,20 @@ export const useActivityStore = defineStore("activity", () => {
         const apiResponse = await getActivityData(year);
 
         // 处理API响应，确保获取的是数组数据
-        // request.ts响应拦截器已经处理了后端返回的标准格式，直接返回了res.data
-        // 所以apiResponse应该直接是活动数据数组
-        activityDataFromApi = Array.isArray(apiResponse) ? apiResponse : [];
+        // 如果apiResponse是对象且包含data字段，说明是完整响应格式
+        if (
+          typeof apiResponse === "object" &&
+          apiResponse !== null &&
+          "data" in apiResponse
+        ) {
+          // 直接从data字段获取活动数据数组
+          activityDataFromApi = Array.isArray(apiResponse.data)
+            ? apiResponse.data
+            : [];
+        } else {
+          // 否则，直接检查是否是数组（响应拦截器处理过的情况）
+          activityDataFromApi = Array.isArray(apiResponse) ? apiResponse : [];
+        }
       } catch (err) {
         console.log("获取真实活动数据失败，使用模拟数据");
         // 如果API请求失败，生成模拟数据

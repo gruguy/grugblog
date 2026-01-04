@@ -4,138 +4,161 @@
       <p class="text-muted-foreground">加载中...</p>
     </div>
     <article v-else-if="contentStore.currentArticle" class="max-w-4xl mx-auto">
-      <header class="mb-8">
-        <h1 class="text-4xl font-bold mb-2">
-          {{
-            contentStore.currentArticle.title ||
-            `文章 ${contentStore.currentArticle.id}`
-          }}
-        </h1>
-        <!-- 文章摘要 -->
-        <p class="text-lg text-muted-foreground mb-4 max-w-3xl">
-          {{
-            contentStore.currentArticle.summary ||
-            contentStore.currentArticle.content
-              .replace(/<[^>]+>/g, "")
-              .substring(0, 50) +
-              (contentStore.currentArticle.content.replace(/<[^>]+>/g, "")
-                .length > 50
-                ? "..."
-                : "")
-          }}
-        </p>
-        <div class="flex items-center space-x-4 text-muted-foreground">
-          <span>{{ formatDate(contentStore.currentArticle.createdAt) }}</span>
-          <span>{{ contentStore.currentArticle.views }} 阅读</span>
-          <span
-            v-if="contentStore.currentArticle.category"
-            :class="[
-              'px-2 py-0.5 rounded text-xs',
-              getCategoryTagClass(contentStore.currentArticle.category.id),
-            ]"
-          >
-            {{ contentStore.currentArticle.category.name }}
-          </span>
-        </div>
-      </header>
-
-      <div
-        v-if="contentStore.currentArticle.cover"
-        class="mb-8 rounded-lg overflow-hidden"
-      >
-        <img
-          :src="contentStore.currentArticle.cover"
-          :alt="contentStore.currentArticle.title"
-          class="w-full h-auto"
-        />
-      </div>
+      <!-- 右侧锚链接 -->
+      <MarkdownAnchor :html-content="renderedContent" />
 
       <!-- 左侧固定功能按钮组 -->
       <div
         class="fixed left-[calc(50%-32rem-20px)] top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-4 z-10"
       >
         <!-- 点赞功能 -->
-        <button
-          @click="toggleLike"
-          class="flex flex-col items-center justify-center w-10 h-10 rounded-lg hover:bg-muted transition-colors flat-button"
-          title="点赞"
-        >
-          <svg
-            :class="[
-              'w-5 h-5',
-              liked ? 'text-red-500' : 'text-muted-foreground',
-            ]"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-            />
-          </svg>
-          <span class="text-xs mt-1">{{
-            contentStore.currentArticle.likes || 0
-          }}</span>
-        </button>
+        <div class="flex flex-col items-center space-y-1">
+          <Badge variant="default" color="default" position="top-right">
+            <template #content>
+              <Button
+                variant="circle"
+                color="white"
+                shadow
+                @click="toggleLike"
+                title="点赞"
+              >
+                <svg
+                  :class="[
+                    'w-5 h-5',
+                    liked ? 'text-red-500' : 'text-muted-foreground',
+                  ]"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  />
+                </svg>
+              </Button>
+            </template>
+            {{ contentStore.currentArticle.likes || 0 }}
+          </Badge>
+        </div>
 
         <!-- 收藏功能 -->
-        <button
-          @click="toggleCollect"
-          class="flex flex-col items-center justify-center w-10 h-10 rounded-lg hover:bg-muted transition-colors flat-button"
-          title="收藏"
-        >
-          <svg
-            :class="[
-              'w-5 h-5',
-              collected ? 'text-yellow-500' : 'text-muted-foreground',
-            ]"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-            />
-          </svg>
-          <span class="text-xs mt-1">{{ collected ? "已收藏" : "收藏" }}</span>
-        </button>
+        <div class="flex flex-col items-center space-y-1">
+          <Badge variant="default" color="default" position="top-right">
+            <template #content>
+              <Button
+                variant="circle"
+                color="white"
+                shadow
+                @click="toggleCollect"
+                title="收藏"
+              >
+                <svg
+                  :class="[
+                    'w-5 h-5',
+                    collected ? 'text-yellow-500' : 'text-muted-foreground',
+                  ]"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                  />
+                </svg>
+              </Button>
+            </template>
+            {{ contentStore.currentArticle.collects || 0 }}
+          </Badge>
+        </div>
 
         <!-- 分享功能 -->
-        <button
-          @click="shareArticle"
-          class="flex flex-col items-center justify-center w-10 h-10 rounded-lg hover:bg-muted transition-colors flat-button"
-          title="分享"
-        >
-          <svg
-            class="w-5 h-5 text-muted-foreground"
-            fill="currentColor"
-            viewBox="0 0 24 24"
+        <div class="flex flex-col items-center space-y-1">
+          <Button
+            variant="circle"
+            color="white"
+            shadow
+            @click="shareArticle"
+            title="分享"
           >
-            <path
-              d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"
-            />
-          </svg>
-          <span class="text-xs mt-1">分享</span>
-        </button>
+            <svg
+              class="w-5 h-5 text-muted-foreground"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"
+              />
+            </svg>
+          </Button>
+        </div>
 
         <!-- 举报功能 -->
-        <button
-          @click="reportArticle"
-          class="flex flex-col items-center justify-center w-10 h-10 rounded-lg hover:bg-muted transition-colors flat-button"
-          title="举报"
-        >
-          <svg
-            class="w-5 h-5 text-muted-foreground"
-            fill="currentColor"
-            viewBox="0 0 24 24"
+        <div class="flex flex-col items-center space-y-1">
+          <Button
+            variant="circle"
+            color="white"
+            shadow
+            @click="reportArticle"
+            title="举报"
           >
-            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
-          </svg>
-          <span class="text-xs mt-1">举报</span>
-        </button>
+            <svg
+              class="w-5 h-5 text-muted-foreground"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+            </svg>
+          </Button>
+        </div>
       </div>
 
-      <!-- 文章主体区域 -->
-      <div class="mb-8">
-        <!-- 文章内容 -->
+      <!-- 文章内容容器，包含白色背景 -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <header class="mb-6">
+          <h1 class="text-4xl font-bold mb-2">
+            {{
+              contentStore.currentArticle.title ||
+              `文章 ${contentStore.currentArticle.id}`
+            }}
+          </h1>
+          <!-- 文章摘要 -->
+          <p class="text-lg text-muted-foreground mb-4 max-w-3xl">
+            {{
+              contentStore.currentArticle.summary ||
+              contentStore.currentArticle.content
+                .replace(/<[^>]+>/g, "")
+                .substring(0, 50) +
+                (contentStore.currentArticle.content.replace(/<[^>]+>/g, "")
+                  .length > 50
+                  ? "..."
+                  : "")
+            }}
+          </p>
+          <div class="flex items-center space-x-4 text-muted-foreground">
+            <span>{{ formatDate(contentStore.currentArticle.createdAt) }}</span>
+            <span>{{ contentStore.currentArticle.views }} 阅读</span>
+            <span
+              v-if="contentStore.currentArticle.category"
+              :class="[
+                'px-2 py-0.5 rounded text-xs',
+                getCategoryTagClass(contentStore.currentArticle.category.id),
+              ]"
+            >
+              {{ contentStore.currentArticle.category.name }}
+            </span>
+          </div>
+        </header>
+
+        <div
+          v-if="contentStore.currentArticle.cover"
+          class="mb-6 rounded-lg overflow-hidden"
+        >
+          <img
+            :src="contentStore.currentArticle.cover"
+            :alt="contentStore.currentArticle.title"
+            class="w-full h-auto"
+          />
+        </div>
+
+        <!-- 文章主体区域 -->
         <div class="prose prose-lg max-w-none" v-html="renderedContent"></div>
       </div>
 
@@ -240,6 +263,9 @@ import { useContentStore } from "@/stores/contentStore";
 import { useUserStore } from "@/stores/userStore";
 import dayjs from "dayjs";
 import Comment from "@/components/Comment.vue";
+import MarkdownAnchor from "@/components/MarkdownAnchor.vue";
+import Button from "@/components/Button.vue";
+import Badge from "@/components/Badge.vue";
 // 引入API
 import {
   toggleArticleLike,
@@ -261,9 +287,27 @@ const contentStore = useContentStore();
 const userStore = useUserStore();
 
 // 状态管理
-const renderedContent = computed(() => {
+const rawRenderedContent = computed(() => {
   if (!contentStore.currentArticle) return "";
-  return marked(contentStore.currentArticle.content);
+  return marked(contentStore.currentArticle.content) as string;
+});
+
+const renderedContent = computed(() => {
+  // 为标题添加ID，用于锚链接跳转
+  const content = rawRenderedContent.value;
+  if (typeof content !== "string") return "";
+
+  return content.replace(
+    /<h([1-6])[^>]*>(.*?)<\/h\1>/g,
+    (_match: string, level: string, content: string) => {
+      const text = content.replace(/<[^>]+>/g, "").trim();
+      const id = text
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "");
+      return `<h${level} id="${id}">${content}</h${level}>`;
+    }
+  );
 });
 
 // 点赞状态
@@ -489,6 +533,14 @@ const toggleCollect = async () => {
     // 后端直接返回收藏状态，而不是包装在data字段中
     if (response && response.isCollected !== undefined) {
       collected.value = response.isCollected;
+    }
+    // 更新收藏数量
+    if (
+      response &&
+      response.collects !== undefined &&
+      contentStore.currentArticle
+    ) {
+      contentStore.currentArticle.collects = response.collects;
     }
   } catch (error) {
     console.error("收藏失败:", error);
@@ -810,6 +862,16 @@ onMounted(async () => {
 
 .prose :deep(tr:nth-child(even)) {
   background-color: var(--muted);
+}
+
+/* 左侧固定功能按钮组样式 */
+.fixed.left-\[calc\(50%\-32rem\-20px\)\].top-1\/2.transform.-translate-y-1\/2.flex.flex-col.items-center.space-y-4.z-10
+  > button {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 8px;
+  transition: all 0.2s ease;
 }
 
 /* 平滑过渡动画 */

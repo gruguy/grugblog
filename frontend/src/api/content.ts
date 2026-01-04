@@ -111,9 +111,11 @@ export const toggleArticleCollect = (
   articleId: number
 ): Promise<{
   isCollected: boolean;
+  collects: number;
 }> => {
   return request.post<{
     isCollected: boolean;
+    collects: number;
   }>(`/articles/${articleId}/collect`);
 };
 

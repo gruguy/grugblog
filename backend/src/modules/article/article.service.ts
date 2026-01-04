@@ -431,14 +431,11 @@ export class ArticleService {
   async toggleCollect(
     userId: number,
     articleId: number
-  ): Promise<{ isCollected: boolean }> {
-    // 查找文章
-    const article = await this.articleRepository.findOne({
+  ): Promise<{ isCollected: boolean; collects: number }> {
+    // 查找文章，确保文章存在
+    const article = await this.articleRepository.findOneOrFail({
       where: { id: articleId },
     });
-    if (!article) {
-      throw new NotFoundException("文章不存在");
-    }
 
     // 查找收藏记录
     const collect = await this.articleCollectRepository.findOne({
@@ -460,7 +457,18 @@ export class ArticleService {
       isCollected = true;
     }
 
-    return { isCollected };
+    // 直接从数据库计算收藏数，确保准确性
+    const collects = await this.articleCollectRepository.count({
+      where: { articleId },
+    });
+
+    // 更新文章表中的collects字段（用于其他查询优化）
+    await this.articleRepository.update(articleId, { collects });
+
+    // 清除缓存
+    await this.redisService.del(`articles:list:*`);
+
+    return { isCollected, collects };
   }
 
   /**

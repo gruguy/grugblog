@@ -56,8 +56,14 @@ export const useContentStore = defineStore("content", () => {
     try {
       const response = await getArticleById(id);
       // 后端直接返回文章详情，而不是包装在data字段中
-      currentArticle.value = response;
-      return response;
+      // 确保collects字段被正确初始化
+      const article = {
+        ...response,
+        collects: response.collects || 0,
+        likes: response.likes || 0
+      };
+      currentArticle.value = article;
+      return article;
     } finally {
       articleLoading.value = false;
     }

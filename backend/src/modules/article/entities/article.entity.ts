@@ -38,6 +38,9 @@ export class Article {
   @Column({ default: 0 })
   likes: number;
 
+  @Column({ default: 0 })
+  collects: number;
+
   @Column({ default: "draft" })
   status: string;
 

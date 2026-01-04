@@ -15,7 +15,7 @@ import { ConfigService } from "@nestjs/config";
           password: configService.get("MYSQL_PASSWORD", "Gruguy31"),
           database: configService.get("MYSQL_DB", "blog"),
           entities: [__dirname + "/../**/*.entity{.ts,.js}"],
-          synchronize: false, // 禁用自动同步，手动管理表结构
+          synchronize: false, // 关闭自动同步，避免system_config表的唯一索引错误
           logging: true, // 启用详细SQL日志，用于调试avatar字段保存问题
           timezone: "+08:00",
           // 增加连接超时和重试设置

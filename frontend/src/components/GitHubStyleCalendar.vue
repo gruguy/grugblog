@@ -197,9 +197,21 @@ const monthCells = computed(() => {
 // 辅助函数：格式化日期为 YYYY-MM-DD 格式（使用本地时区）
 const formatDate = (date: Date): string => {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+// 生成tooltip内容
+const generateTooltip = (data: ActivityData | undefined, date: Date) => {
+  const count = data?.count || 0;
+  const dateStr = date.toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  return `${dateStr}：${count}次贡献`;
 };
 
 // 计算属性：日历天数
@@ -211,8 +223,8 @@ const calendarDays = computed(() => {
   const firstDayOfYear = new Date(currentYear.value, 0, 1);
   const startOfCalendar = new Date(firstDayOfYear);
   startOfCalendar.setDate(
-    firstDayOfYear.getDate() - 
-      firstDayOfYear.getDay() + 
+    firstDayOfYear.getDate() -
+      firstDayOfYear.getDay() +
       (firstDayOfYear.getDay() === 0 ? -6 : 1)
   );
 
@@ -266,18 +278,7 @@ const calendarByWeekday = computed(() => {
 
   return weekdayArrays;
 });
-
-// 生成tooltip内容
-const generateTooltip = (data: ActivityData | undefined, date: Date) => {
-  const count = data?.count || 0;
-  const dateStr = date.toLocaleDateString("zh-CN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  return `${dateStr}：${count}次贡献`;
-};
+console.log(calendarByWeekday.value);
 
 // 获取日期单元格的类名
 const getDayClass = (day: any) => {
