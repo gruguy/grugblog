@@ -1,6 +1,6 @@
 <template>
   <div
-    class="markdown-anchor fixed right-8 top-24 w-56 bg-card rounded-xl border border-border p-4 shadow-md overflow-auto max-h-[calc(100vh-12rem)] z-10 transition-all duration-300"
+    class="markdown-anchor fixed right-8 top-24 w-56 bg-card rounded-xl border border-border p-4 shadow-md overflow-auto max-h-[calc(100vh-12rem)] z-10 transition-all duration-300 hidden md:block"
     v-if="headings.length > 0"
   >
     <h3
@@ -22,19 +22,17 @@
       文章目录
     </h3>
     <ul class="space-y-2">
-      <li
-        v-for="heading in headings"
-        :key="heading.id"
-        :class="[
-          { 'font-medium text-primary': activeHeadingId === heading.id },
-          { 'text-muted-foreground': activeHeadingId !== heading.id },
-        ]"
-      >
+      <li v-for="heading in headings" :key="heading.id">
         <a
           :href="`#${heading.id}`"
           @click.prevent="scrollToHeading(heading.id)"
-          class="block px-2 py-1.5 rounded-lg transition-all duration-200 hover:bg-muted hover:text-primary"
-          :class="heading.level === 1 ? 'text-sm font-medium' : 'text-xs'"
+          class="block px-3 py-2 rounded-lg transition-all duration-200 hover:bg-muted hover:text-primary"
+          :class="[
+            heading.level === 1 ? 'text-sm font-medium' : 'text-xs pl-6',
+            activeHeadingId === heading.id
+              ? 'bg-primary/10 text-primary font-medium'
+              : 'text-muted-foreground',
+          ]"
         >
           {{ heading.text }}
         </a>
@@ -63,15 +61,23 @@ const headings = ref<Heading[]>([]);
 const activeHeadingId = ref<string>("");
 const headingElements = ref<Map<string, HTMLElement>>(new Map());
 
-// 生成唯一ID
+// 生成唯一ID - 使用简单的计数器确保绝对唯一
+let globalIdCounter = 0;
+
 const generateId = (text: string): string => {
-  return text
+  const baseId = text
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
+
+  // 递增全局计数器
+  globalIdCounter++;
+
+  // 始终返回带有计数器的ID，确保绝对唯一
+  return `${baseId}-${globalIdCounter}`;
 };
 
-// 解析HTML内容，提取标题（只显示一二级）
+// 解析HTML内容，提取标题（显示一级和二级标题）
 const parseHeadings = (html: string): Heading[] => {
   const headings: Heading[] = [];
   const headingRegex = /<h([1-6])[^>]*>(.*?)<\/h\1>/g;
@@ -79,7 +85,7 @@ const parseHeadings = (html: string): Heading[] => {
 
   while ((match = headingRegex.exec(html)) !== null) {
     const level = parseInt(match[1], 10);
-    // 只包含一二级标题
+    // 只包含一级和二级标题
     if (level > 2) continue;
 
     const text = match[2].replace(/<[^>]+>/g, "").trim();
@@ -148,6 +154,9 @@ const initHeadingElements = () => {
 watch(
   () => props.htmlContent,
   (newContent) => {
+    // 重置全局ID计数器
+    globalIdCounter = 0;
+    
     headings.value = parseHeadings(newContent);
 
     nextTick(() => {

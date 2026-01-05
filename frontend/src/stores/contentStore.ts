@@ -15,6 +15,10 @@ export const useContentStore = defineStore("content", () => {
   const articles = ref<Article[]>([]);
   const currentArticle = ref<Article | null>(null);
   const articleLoading = ref<boolean>(false);
+  const currentPage = ref<number>(1);
+  const totalArticles = ref<number>(0);
+  const hasMore = ref<boolean>(true);
+  const isLoadingMore = ref<boolean>(false);
 
   // 音乐相关
   const musicList = ref<Music[]>([]);
@@ -31,6 +35,7 @@ export const useContentStore = defineStore("content", () => {
   // 分类相关
   const categories = ref<Category[]>([]);
   const categoryLoading = ref<boolean>(false);
+  const currentCategoryId = ref<number | null>(null);
 
   // 获取文章列表
   const fetchArticles = async (params?: {
@@ -38,16 +43,84 @@ export const useContentStore = defineStore("content", () => {
     size?: number;
     categoryId?: number;
     tagId?: number;
+    append?: boolean;
   }) => {
-    articleLoading.value = true;
+    const {
+      page = 1,
+      size = 10,
+      categoryId,
+      tagId,
+      append = false,
+    } = params || {};
+
+    // 如果是首次加载或切换分类，重置状态
+    if (page === 1 || categoryId !== currentCategoryId.value) {
+      currentPage.value = 1;
+      totalArticles.value = 0;
+      hasMore.value = true;
+      if (!append) {
+        articles.value = [];
+      }
+      currentCategoryId.value = categoryId || null;
+    }
+
+    // 如果没有更多数据或正在加载，直接返回
+    if (!hasMore.value || isLoadingMore.value) {
+      return;
+    }
+
+    // 设置加载状态
+    if (append) {
+      isLoadingMore.value = true;
+    } else {
+      articleLoading.value = true;
+    }
+
     try {
-      const response = await getArticles(params);
-      // 后端直接返回文章列表数据，而不是包装在data字段中
-      articles.value = response.list || [];
+      const response = await getArticles({
+        page,
+        size,
+        categoryId,
+        tagId,
+      });
+
+      const newArticles = response.list || [];
+
+      // 更新文章列表
+      if (append) {
+        articles.value = [...articles.value, ...newArticles];
+      } else {
+        articles.value = newArticles;
+      }
+
+      // 更新分页信息
+      totalArticles.value = response.total || 0;
+      currentPage.value = page;
+      hasMore.value = articles.value.length < totalArticles.value;
+
       return response;
     } finally {
-      articleLoading.value = false;
+      // 重置加载状态
+      if (append) {
+        isLoadingMore.value = false;
+      } else {
+        articleLoading.value = false;
+      }
     }
+  };
+
+  // 加载更多文章
+  const loadMoreArticles = async () => {
+    if (!hasMore.value || isLoadingMore.value) {
+      return;
+    }
+
+    return await fetchArticles({
+      page: currentPage.value + 1,
+      size: 10,
+      categoryId: currentCategoryId.value || undefined,
+      append: true,
+    });
   };
 
   // 获取文章详情
@@ -60,7 +133,7 @@ export const useContentStore = defineStore("content", () => {
       const article = {
         ...response,
         collects: response.collects || 0,
-        likes: response.likes || 0
+        likes: response.likes || 0,
       };
       currentArticle.value = article;
       return article;
@@ -125,8 +198,13 @@ export const useContentStore = defineStore("content", () => {
     articles,
     currentArticle,
     articleLoading,
+    currentPage,
+    totalArticles,
+    hasMore,
+    isLoadingMore,
     categories,
     categoryLoading,
+    currentCategoryId,
     musicList,
     musicLoading,
     imageList,
@@ -135,6 +213,7 @@ export const useContentStore = defineStore("content", () => {
     videoLoading,
     fetchArticles,
     fetchArticleById,
+    loadMoreArticles,
     fetchCategories,
     fetchMusicList,
     fetchImageList,

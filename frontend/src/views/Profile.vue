@@ -141,6 +141,18 @@
           </div>
         </div>
 
+        <!-- 活动日历 -->
+        <div class="mt-12 mb-12">
+          <h3 class="text-xl font-bold mb-6">我的活动日历</h3>
+          <GitHubStyleCalendar
+            :data="activityStore.activityData"
+            :title="'我的活动日历'"
+            :show-legend="true"
+            @click="handleDateClick"
+            @yearChange="handleYearChange"
+          />
+        </div>
+
         <!-- 内容标签页 -->
         <div class="border-t border-border">
           <div class="flex space-x-8 mb-8">
@@ -321,7 +333,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import MainLayout from "@/layouts/MainLayout.vue";
+import GitHubStyleCalendar from "@/components/GitHubStyleCalendar.vue";
 import { useUserStore } from "@/stores/userStore";
+import { useActivityStore } from "@/stores/activityStore";
+import type { ActivityData } from "@/types/activity";
 import {
   getUserLikedArticles,
   getUserCollectedArticles,
@@ -330,6 +345,7 @@ import {
 } from "@/api/content";
 
 const userStore = useUserStore();
+const activityStore = useActivityStore();
 const activeTab = ref("liked");
 const fileInput = ref<HTMLInputElement | null>(null);
 
@@ -338,6 +354,17 @@ const likedArticles = ref<any[]>([]);
 const collectedArticles = ref<any[]>([]);
 const followedAuthors = ref<any[]>([]);
 const isLoading = ref(false);
+
+// 处理日期点击事件
+const handleDateClick = (date: string, data: ActivityData | undefined) => {
+  console.log("点击了日期:", date, data);
+};
+
+// 处理年份切换事件
+const handleYearChange = async (year: number) => {
+  console.log("切换到年份:", year);
+  await activityStore.fetchActivityData(year);
+};
 
 // 编辑相关状态
 const isEditing = ref(false);
@@ -451,20 +478,20 @@ const handleAvatarUpload = async (event: Event) => {
     const file = input.files[0];
     try {
       // 调用上传API
-      const { uploadFile } = await import('@/api/upload');
+      const { uploadFile } = await import("@/api/upload");
       const uploadResult = await uploadFile(file);
-      
+
       // 更新用户头像
       await updateUserInfo({ avatar: uploadResult.url });
-      
+
       // 重新获取用户信息，更新store
       await fetchUserInfo();
-      
+
       // 清空文件输入，以便可以重新选择同一文件
-      input.value = '';
+      input.value = "";
     } catch (error) {
-      console.error('头像上传失败:', error);
-      alert('头像上传失败，请重试');
+      console.error("头像上传失败:", error);
+      alert("头像上传失败，请重试");
     }
   }
 };
@@ -482,5 +509,8 @@ onMounted(async () => {
   await fetchLikedArticles();
   await fetchCollectedArticles();
   await fetchFollowedAuthors();
+
+  // 获取活动数据
+  await activityStore.fetchActivityData();
 });
 </script>

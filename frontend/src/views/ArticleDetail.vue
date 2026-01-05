@@ -13,7 +13,11 @@
       >
         <!-- 点赞功能 -->
         <div class="flex flex-col items-center space-y-1">
-          <Badge variant="default" color="default" position="top-right">
+          <Badge
+            variant="default"
+            :color="liked ? 'red' : 'default'"
+            position="top-right"
+          >
             <template #content>
               <Button
                 variant="circle"
@@ -42,7 +46,11 @@
 
         <!-- 收藏功能 -->
         <div class="flex flex-col items-center space-y-1">
-          <Badge variant="default" color="default" position="top-right">
+          <Badge
+            variant="default"
+            :color="collected ? 'yellow' : 'default'"
+            position="top-right"
+          >
             <template #content>
               <Button
                 variant="circle"
@@ -163,90 +171,35 @@
       </div>
 
       <!-- 评论区 -->
-      <div class="mb-8">
-        <h3 class="text-2xl font-bold mb-4">评论 ({{ comments.length }})</h3>
+      <div class="mb-8 bg-white p-4">
+        <h3 class="text-xl font-bold mb-4">评论 ({{ comments.length }})</h3>
+
+        <!-- 发表评论表单 -->
+        <Comment
+          ref="commentFormRef"
+          :is-comment-form="true"
+          :user-info="userInfo"
+          :on-submit="handleCommentSubmit"
+        />
 
         <!-- 评论列表 -->
-        <div class="space-y-4 mb-6">
+        <div class="mb-6">
           <!-- 评论项 -->
           <Comment
             v-for="comment in comments"
             :key="comment.id"
             :comment="comment"
-            :on-reply="startReply"
-            @like="handleCommentLike"
+            :on-reply="handleCommentReply"
+            :on-like="handleCommentLike"
+            :user-info="userInfo"
           />
 
           <!-- 占位评论 -->
           <div
             v-if="comments.length === 0"
-            class="text-center py-8 text-muted-foreground"
+            class="text-center py-8 text-muted-foreground bg-white p-4 rounded-lg"
           >
             暂无评论，快来抢沙发吧！
-          </div>
-        </div>
-
-        <!-- 发表评论 -->
-        <div class="bg-card p-4 rounded-lg border border-border">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="font-medium">
-              {{ replyToCommentId ? `回复 @${replyToAuthor}` : "发表评论" }}
-            </h4>
-            <button
-              v-if="replyToCommentId"
-              @click="cancelReply"
-              class="text-sm text-muted-foreground hover:text-foreground"
-            >
-              取消回复
-            </button>
-          </div>
-          <div class="relative mb-3">
-            <!-- 评论输入框 -->
-            <textarea
-              ref="commentTextarea"
-              v-model="commentContent"
-              placeholder="请输入评论内容..."
-              class="w-full p-3 border border-border rounded-lg"
-              rows="3"
-            ></textarea>
-            <!-- 表情按钮 -->
-            <div class="absolute bottom-3 right-3 flex items-center gap-2">
-              <button
-                @click="toggleEmojiPicker"
-                class="text-muted-foreground hover:text-foreground"
-                title="表情"
-              >
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path
-                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.43 9.57c-.14.14-.33.21-.53.21-.2 0-.39-.07-.53-.21l-1.41-1.41-1.41 1.41c-.14.14-.33.21-.53.21-.2 0-.39-.07-.53-.21-.28-.28-.28-.73 0-1.01l1.41-1.41-1.41-1.41c-.28-.28-.28-.73 0-1.01s.73-.28 1.01 0l1.41 1.41 1.41-1.41c.28-.28.73-.28 1.01 0 .28.28.28.73 0 1.01l-1.41 1.41 1.41 1.41c.28.28.28.73 0 1.01zM9 13h2v2H9zm3-6h-2v2h2zm-6 0H5v2h1zm0 4H5v2h1zm0 4H5v2h1z"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-            <!-- 表情选择器 -->
-            <div
-              v-if="showEmojiPicker"
-              class="absolute bottom-full right-0 mb-2 bg-card rounded-lg border border-border shadow-lg p-2 grid grid-cols-8 gap-2 w-64 max-h-60 overflow-y-auto"
-            >
-              <button
-                v-for="emoji in emojis"
-                :key="emoji"
-                @click="insertEmoji(emoji)"
-                class="text-xl p-1 rounded hover:bg-muted transition-colors"
-                title="插入表情"
-              >
-                {{ emoji }}
-              </button>
-            </div>
-          </div>
-          <div class="flex justify-end">
-            <button
-              @click="submitComment"
-              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-              :disabled="!commentContent.trim()"
-            >
-              {{ replyToCommentId ? "回复" : "发表评论" }}
-            </button>
           </div>
         </div>
       </div>
@@ -297,14 +250,24 @@ const renderedContent = computed(() => {
   const content = rawRenderedContent.value;
   if (typeof content !== "string") return "";
 
+  // 使用简单的递增计数器确保绝对唯一
+  let globalIdCounter = 0;
+
   return content.replace(
     /<h([1-6])[^>]*>(.*?)<\/h\1>/g,
     (_match: string, level: string, content: string) => {
       const text = content.replace(/<[^>]+>/g, "").trim();
-      const id = text
+      const baseId = text
         .toLowerCase()
         .replace(/\s+/g, "-")
         .replace(/[^a-z0-9-]/g, "");
+
+      // 递增计数器
+      globalIdCounter++;
+
+      // 始终返回带有计数器的ID，确保绝对唯一
+      const id = `${baseId}-${globalIdCounter}`;
+
       return `<h${level} id="${id}">${content}</h${level}>`;
     }
   );
@@ -318,111 +281,9 @@ const collected = ref(false);
 
 // 评论相关
 const comments = ref<any[]>([]);
-const commentContent = ref("");
-const replyToCommentId = ref<number | null>(null);
-const replyToAuthor = ref("");
-const commentTextarea = ref<HTMLTextAreaElement | null>(null);
-const showEmojiPicker = ref(false);
 
-// 常用表情列表
-const emojis = ref([
-  "😀",
-  "😃",
-  "😄",
-  "😁",
-  "😆",
-  "😅",
-  "😂",
-  "🤣",
-  "😊",
-  "😇",
-  "🙂",
-  "🙃",
-  "😉",
-  "😌",
-  "😍",
-  "🥰",
-  "😘",
-  "😗",
-  "😙",
-  "😚",
-  "😋",
-  "😛",
-  "😝",
-  "😜",
-  "🤪",
-  "🤨",
-  "🧐",
-  "🤓",
-  "😎",
-  "🤩",
-  "🥳",
-  "😏",
-  "😒",
-  "😞",
-  "😔",
-  "😟",
-  "😕",
-  "🙁",
-  "☹️",
-  "😣",
-  "😖",
-  "😫",
-  "😩",
-  "🥺",
-  "😢",
-  "😭",
-  "😤",
-  "😠",
-  "😡",
-  "🤬",
-  "🤯",
-  "😳",
-  "🥵",
-  "🥶",
-  "😱",
-  "😨",
-  "😰",
-  "😥",
-  "😓",
-  "🤗",
-  "🤔",
-  "🤭",
-  "🤫",
-  "🤥",
-  "😶",
-  "😐",
-  "😑",
-  "😬",
-  "🙄",
-  "😯",
-  "😦",
-  "😧",
-  "😮",
-  "😲",
-  "🥱",
-  "😴",
-  "🤤",
-  "😪",
-  "😵",
-  "🤐",
-  "🥴",
-  "🤢",
-  "🤮",
-  "🤧",
-  "😷",
-  "🤒",
-  "🤕",
-  "🤑",
-  "🤠",
-  "😈",
-  "👿",
-  "👹",
-  "👺",
-  "🤡",
-  "💩",
-  "👻",
-]);
+// 评论表单引用
+const commentFormRef = ref<InstanceType<typeof Comment> | null>(null);
 
 // 格式化日期为相对时间
 const formatDate = (date: string) => {
@@ -446,58 +307,6 @@ const getCategoryTagClass = (categoryId: number) => {
 
   // 如果没有匹配的颜色，使用默认颜色
   return categoryColors[categoryId] || "bg-primary/10 text-primary";
-};
-
-// 开始回复
-const startReply = (comment: any) => {
-  replyToCommentId.value = comment.id;
-  replyToAuthor.value = comment.author;
-  commentContent.value = `@${comment.author} `;
-  // 跳转到评论框并获得焦点
-  setTimeout(() => {
-    commentTextarea.value?.focus();
-  }, 100);
-};
-
-// 取消回复
-const cancelReply = () => {
-  replyToCommentId.value = null;
-  replyToAuthor.value = "";
-  commentContent.value = "";
-};
-
-// 切换表情选择器
-const toggleEmojiPicker = () => {
-  showEmojiPicker.value = !showEmojiPicker.value;
-};
-
-// 插入表情
-const insertEmoji = (emoji: string) => {
-  if (commentTextarea.value) {
-    // 获取当前光标位置
-    const start = commentTextarea.value.selectionStart;
-    const end = commentTextarea.value.selectionEnd;
-    const text = commentTextarea.value.value;
-
-    // 插入表情
-    commentContent.value = text.slice(0, start) + emoji + text.slice(end);
-
-    // 关闭表情选择器
-    showEmojiPicker.value = false;
-
-    // 恢复焦点并设置光标位置
-    setTimeout(() => {
-      commentTextarea.value?.focus();
-      if (commentTextarea.value) {
-        commentTextarea.value.selectionStart =
-          commentTextarea.value.selectionEnd = start + emoji.length;
-      }
-    }, 100);
-  } else {
-    // 如果没有textarea引用，直接添加到内容末尾
-    commentContent.value += emoji;
-    showEmojiPicker.value = false;
-  }
 };
 
 // 点赞功能
@@ -580,6 +389,14 @@ const reportArticle = () => {
   }
 };
 
+// 用户信息，用于传递给Comment组件
+const userInfo = computed(() => ({
+  nickname: userStore.user?.nickname || userStore.user?.username || "匿名用户",
+  username: userStore.user?.username,
+  avatar: userStore.user?.avatar,
+  id: userStore.user?.id,
+}));
+
 // 处理评论点赞
 const handleCommentLike = async (commentId: number) => {
   try {
@@ -608,12 +425,21 @@ const handleCommentLike = async (commentId: number) => {
   }
 };
 
-// 提交评论
-const submitComment = async () => {
-  if (!commentContent.value.trim()) return;
+// 处理评论回复
+const handleCommentReply = (comment: any) => {
+  // 使用ref直接调用Comment组件的startReply方法
+  if (commentFormRef.value) {
+    commentFormRef.value.startReply(comment);
+  }
+};
 
+// 处理评论提交
+const handleCommentSubmit = async (data: {
+  content: string;
+  parentId?: number;
+}) => {
   const articleId = parseInt(route.params.id as string);
-  let commentText = commentContent.value.trim();
+  let commentText = data.content;
 
   // 敏感词过滤检查
   if (containsSensitiveWords(commentText)) {
@@ -631,31 +457,29 @@ const submitComment = async () => {
     // 添加调试信息，查看提交的评论数据
     console.log("提交评论数据:", {
       content: commentText,
-      author:
-        userStore.user?.nickname || userStore.user?.username || "匿名用户",
+      author: userInfo.value.nickname,
       articleId,
-      parentId: replyToCommentId.value,
-      avatar: userStore.user?.avatar,
+      parentId: data.parentId,
+      avatar: userInfo.value.avatar,
     });
 
     // 调用API提交评论
     const response = await createArticleComment({
       content: commentText,
-      author:
-        userStore.user?.nickname || userStore.user?.username || "匿名用户",
+      author: userInfo.value.nickname,
       articleId,
-      parentId: replyToCommentId.value,
-      avatar: userStore.user?.avatar,
+      parentId: data.parentId,
+      avatar: userInfo.value.avatar,
     });
 
     console.log("评论提交响应:", response);
 
     // 添加到评论列表或回复列表
-    if (replyToCommentId.value) {
+    if (data.parentId) {
       // 是回复，需要找到父评论并添加到其replies中
       const addReplyToParent = (commentList: any[]) => {
         for (const comment of commentList) {
-          if (comment.id === replyToCommentId.value) {
+          if (comment.id === data.parentId) {
             if (!comment.replies) {
               comment.replies = [];
             }
@@ -671,14 +495,25 @@ const submitComment = async () => {
       };
 
       addReplyToParent(comments.value);
+
+      // 发表回复后跳转至回复的具体地方
+      setTimeout(() => {
+        const parentCommentElement = document.getElementById(
+          `comment-${data.parentId}`
+        );
+        if (parentCommentElement) {
+          parentCommentElement.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "start",
+          });
+        }
+      }, 100);
     } else {
       // 是新评论，直接添加到评论列表
       // 后端直接返回评论数据，而不是包装在data字段中
       comments.value.unshift(response);
     }
-
-    // 重置评论表单
-    cancelReply();
   } catch (error) {
     console.error("提交评论失败:", error);
   }
@@ -734,7 +569,7 @@ onMounted(async () => {
 }
 
 .prose :deep(h1) {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: bold;
   margin: 24px 0 16px;
   color: var(--text-foreground);
@@ -743,7 +578,7 @@ onMounted(async () => {
 }
 
 .prose :deep(h2) {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
   margin: 20px 0 14px;
   color: var(--text-foreground);
