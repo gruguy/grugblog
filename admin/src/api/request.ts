@@ -22,7 +22,8 @@ service.interceptors.request.use(
     const token = userStore.token || localStorage.getItem("token");
     console.log("当前Token:", token);
 
-    if (token && config.headers) {
+    // 登录请求不添加Authorization头
+    if (token && config.headers && !config.url?.includes("/auth/login")) {
       config.headers.Authorization = `Bearer ${token}`;
       console.log("添加Authorization头:", config.headers.Authorization);
     }
@@ -62,6 +63,20 @@ service.interceptors.response.use(
   (error) => {
     if (error.response) {
       const { status, data } = error.response;
+
+      // 登录请求特殊处理，保留原始错误信息
+      if (error.config?.url?.includes("/auth/login")) {
+        // 为登录错误添加更友好的错误信息
+        const errorMessage = data?.message || "登录失败，请检查用户名和密码";
+        const loginError = new Error(errorMessage);
+        // 将原始响应数据附加到错误对象上，方便前端使用
+        Object.assign(loginError, {
+          response: error.response,
+          status,
+          data,
+        });
+        return Promise.reject(loginError);
+      }
 
       switch (status) {
         case 401:

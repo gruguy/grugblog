@@ -23,35 +23,62 @@
         </select>
       </div>
 
-      <!-- 文章列表 -->
-      <div v-if="contentStore.articleLoading" class="text-center py-12">
-        <p class="text-muted-foreground">加载中...</p>
-      </div>
+      <!-- 文章列表容器 -->
       <div
-        v-else-if="contentStore.articles.length === 0"
-        class="text-center py-12"
+        ref="articleListContainer"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[calc(100vh-180px)] overflow-y-auto p-1"
+        @scroll="handleScroll"
       >
-        <p class="text-muted-foreground">暂无文章</p>
-      </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <ArticleCard
-          v-for="article in contentStore.articles"
-          :key="article.id"
-          :article="article"
-        />
-      </div>
-
-      <!-- 分页 -->
-      <div v-if="totalPages > 1" class="flex justify-center space-x-2">
-        <button
-          v-for="page in totalPages"
-          :key="page"
-          @click="goToPage(page)"
-          class="px-4 py-2 rounded-md border border-border hover:bg-muted transition-colors"
-          :class="{ 'bg-primary text-white': currentPage === page }"
+        <!-- 空数据状态 -->
+        <div
+          v-if="
+            !contentStore.articleLoading && contentStore.articles.length === 0
+          "
+          class="col-span-full text-center py-12"
         >
-          {{ page }}
-        </button>
+          <p class="text-muted-foreground">暂无文章</p>
+        </div>
+
+        <!-- 骨架屏加载状态 - 初始加载 -->
+        <div
+          v-else-if="
+            contentStore.articleLoading && contentStore.articles.length === 0
+          "
+          class="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          <div v-for="i in 6" :key="`skeleton-${i}`" class="space-y-6">
+            <Skeleton type="article-card" />
+          </div>
+        </div>
+
+        <!-- 文章列表 -->
+        <template v-else>
+          <ArticleCard
+            v-for="article in contentStore.articles"
+            :key="article.id"
+            :article="article"
+          />
+
+          <!-- 加载更多骨架屏 -->
+          <div
+            v-if="contentStore.isLoadingMore"
+            class="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            <div v-for="i in 3" :key="`load-more-skeleton-${i}`">
+              <Skeleton type="article-card" />
+            </div>
+          </div>
+
+          <!-- 没有更多数据 -->
+          <div
+            v-else-if="
+              !contentStore.hasMore && contentStore.articles.length > 0
+            "
+            class="col-span-full text-center py-4 text-muted-foreground"
+          >
+            没有更多文章了
+          </div>
+        </template>
       </div>
     </div>
   </MainLayout>
@@ -61,34 +88,50 @@
 import { ref, onMounted } from "vue";
 import MainLayout from "@/layouts/MainLayout.vue";
 import ArticleCard from "@/components/ArticleCard.vue";
+import Skeleton from "@/components/Skeleton.vue";
 import { useContentStore } from "@/stores/contentStore";
 
 const contentStore = useContentStore();
 const selectedCategory = ref<number | "">("");
-const currentPage = ref(1);
-const pageSize = ref(12);
-const totalPages = ref(1);
 
-const handleFilter = async () => {
-  currentPage.value = 1;
-  await fetchArticles();
+// 文章列表容器引用，用于监听滚动事件
+const articleListContainer = ref<HTMLElement | null>(null);
+
+// 滚动到底部加载更多的处理函数
+const handleScroll = () => {
+  if (
+    !articleListContainer.value ||
+    contentStore.isLoadingMore ||
+    !contentStore.hasMore
+  ) {
+    return;
+  }
+
+  const { scrollTop, scrollHeight, clientHeight } = articleListContainer.value;
+
+  // 当滚动到距离底部100px时，加载更多数据
+  if (scrollHeight - scrollTop - clientHeight < 100) {
+    contentStore.loadMoreArticles();
+  }
 };
 
-const goToPage = async (page: number) => {
-  currentPage.value = page;
+const handleFilter = async () => {
+  // 重置文章列表和当前分类ID
+  contentStore.articles = [];
+  contentStore.currentCategoryId = selectedCategory.value || null;
+  contentStore.hasMore = true;
+  contentStore.currentPage = 1;
   await fetchArticles();
 };
 
 const fetchArticles = async () => {
   try {
-    const response = await contentStore.fetchArticles({
-      page: currentPage.value,
-      size: pageSize.value,
+    await contentStore.fetchArticles({
+      page: 1,
+      size: 12,
       categoryId: selectedCategory.value || undefined,
+      append: false,
     });
-    if (response) {
-      totalPages.value = Math.ceil(response.total / pageSize.value);
-    }
   } catch (error) {
     console.error("获取文章列表失败:", error);
   }

@@ -148,8 +148,12 @@ export const useContentStore = defineStore("content", () => {
     try {
       const response = await getMusicList();
       // 后端直接返回音乐列表，而不是包装在data字段中
-      musicList.value = response || [];
-      return response;
+      // 确保每个音乐对象都有scores字段，即使后端没有返回
+      musicList.value = (response || []).map((music) => ({
+        ...music,
+        scores: music.scores || [],
+      }));
+      return musicList.value;
     } finally {
       musicLoading.value = false;
     }

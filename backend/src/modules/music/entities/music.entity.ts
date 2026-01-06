@@ -28,6 +28,9 @@ export class Music {
   @Column({ default: 0 })
   playCount: number
 
+  @Column({ type: 'json', nullable: true })
+  scores: string[]
+
   @CreateDateColumn()
   createdAt: Date
 }

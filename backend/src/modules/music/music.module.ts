@@ -8,6 +8,7 @@ import { Music } from './entities/music.entity'
   imports: [TypeOrmModule.forFeature([Music])],
   controllers: [MusicController],
   providers: [MusicService],
+  exports: [MusicService],
 })
 export class MusicModule {}
 

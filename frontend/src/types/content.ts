@@ -39,6 +39,7 @@ export interface Music {
   url: string;
   duration?: number;
   playCount: number;
+  scores?: string[];
   createdAt: string;
 }
 

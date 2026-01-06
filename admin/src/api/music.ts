@@ -8,6 +8,7 @@ export interface MusicForm {
   url: string;
   duration: number;
   description?: string;
+  scores?: string[];
 }
 
 export const getMusicList = (params?: any) => {
@@ -18,20 +19,12 @@ export const getMusicById = (id: number) => {
   return request.get(`/music/${id}`);
 };
 
-export const createMusic = (data: FormData) => {
-  return request.post("/music", data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+export const createMusic = (data: MusicForm) => {
+  return request.post("/music", data);
 };
 
-export const updateMusic = (id: number, data: FormData) => {
-  return request.patch(`/music/${id}`, data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+export const updateMusic = (id: number, data: MusicForm) => {
+  return request.patch(`/music/${id}`, data);
 };
 
 export const deleteMusic = (id: number) => {

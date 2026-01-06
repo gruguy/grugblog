@@ -9,6 +9,9 @@ import { ArticleLike } from "./entities/like.entity";
 import { CreateArticleDto } from "./dto/create-article.dto";
 import { UpdateArticleDto } from "./dto/update-article.dto";
 import { RedisService } from "@/common/redis/redis.service";
+import { MusicService } from "../music/music.service";
+import { ImageService } from "../image/image.service";
+import { VideoService } from "../video/video.service";
 
 console.log("ArticleService - 正在加载...");
 
@@ -25,7 +28,10 @@ export class ArticleService {
     private articleCollectRepository: Repository<ArticleCollect>,
     @InjectRepository(ArticleLike)
     private articleLikeRepository: Repository<ArticleLike>,
-    private redisService: RedisService
+    private redisService: RedisService,
+    private musicService: MusicService,
+    private imageService: ImageService,
+    private videoService: VideoService
   ) {}
 
   async create(createArticleDto: CreateArticleDto): Promise<Article> {
@@ -297,11 +303,11 @@ export class ArticleService {
   }
 
   /**
-   * 获取文章活动数据，按日期分组
+   * 获取所有内容类型的活动数据，按日期分组
    */
   async getActivityData(year?: number) {
     const targetYear = year || new Date().getFullYear();
-    const cacheKey = `articles:activity_v2:${targetYear}`;
+    const cacheKey = `content:activity:${targetYear}`;
 
     // 尝试从缓存获取，如果失败则直接从数据库查询
     try {
@@ -314,17 +320,37 @@ export class ArticleService {
       console.error("Redis缓存获取失败:", error);
     }
 
-    // 查询所有文章，按创建日期分组
+    // 按日期分组统计
+    const activityMap = new Map<string, number>();
+
+    // 查询所有文章
     const articles = await this.articleRepository.find({
       select: ["createdAt"],
       order: { createdAt: "DESC" },
     });
-
-    // 按日期分组统计
-    const activityMap = new Map<string, number>();
-
     articles.forEach((article) => {
       const date = article.createdAt.toISOString().split("T")[0];
+      activityMap.set(date, (activityMap.get(date) || 0) + 1);
+    });
+
+    // 查询所有音乐
+    const music = await this.musicService.findAll();
+    music.forEach((item) => {
+      const date = item.createdAt.toISOString().split("T")[0];
+      activityMap.set(date, (activityMap.get(date) || 0) + 1);
+    });
+
+    // 查询所有图片
+    const images = await this.imageService.findAll();
+    images.forEach((item) => {
+      const date = item.createdAt.toISOString().split("T")[0];
+      activityMap.set(date, (activityMap.get(date) || 0) + 1);
+    });
+
+    // 查询所有视频
+    const videos = await this.videoService.findAll();
+    videos.forEach((item) => {
+      const date = item.createdAt.toISOString().split("T")[0];
       activityMap.set(date, (activityMap.get(date) || 0) + 1);
     });
 
@@ -345,7 +371,7 @@ export class ArticleService {
         activityData.push({
           date: formattedDate,
           count,
-          description: count > 0 ? `${count} 篇文章` : "无文章",
+          description: count > 0 ? `${count} 条内容` : "无内容",
         });
       }
     }

@@ -39,14 +39,14 @@
               <!-- 未登录状态 -->
               <template v-if="!userStore.isLoggedIn">
                 <button
-                  @click="showLoginModal = true"
+                  @click="modalStore.openLoginModal()"
                   class="text-foreground hover:text-primary transition-colors"
                 >
                   登录
                 </button>
                 <span class="text-muted-foreground">|</span>
                 <button
-                  @click="showRegisterModal = true"
+                  @click="modalStore.openRegisterModal()"
                   class="text-primary hover:underline"
                 >
                   注册
@@ -83,11 +83,9 @@
                       v-if="!userStore.user?.avatar"
                       class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-medium text-xs border border-border"
                     >
-                      {{
-                        (userStore.user?.username || "U")
-                          .charAt(0)
-                          .toUpperCase()
-                      }}
+                      {{ (userStore.user?.username || "U")
+                        .charAt(0)
+                        .toUpperCase() }}
                     </div>
                     <img
                       v-else
@@ -182,7 +180,7 @@
     </footer>
 
     <!-- 登录弹窗 -->
-    <Modal v-model:modelValue="showLoginModal" title="用户登录">
+    <Modal v-model:modelValue="modalStore.showLoginModal" title="用户登录">
       <div class="p-0">
         <form @submit.prevent="handleLogin">
           <div class="mb-4 px-6 pt-6">
@@ -227,7 +225,7 @@
               还没有账号？
               <button
                 type="button"
-                @click="toggleModal('register')"
+                @click="modalStore.toggleModal('register')"
                 class="text-primary hover:underline"
               >
                 立即注册
@@ -239,7 +237,7 @@
     </Modal>
 
     <!-- 注册弹窗 -->
-    <Modal v-model:modelValue="showRegisterModal" title="用户注册">
+    <Modal v-model:modelValue="modalStore.showRegisterModal" title="用户注册">
       <div class="p-0">
         <form @submit.prevent="handleRegister">
           <div class="mb-4 px-6 pt-6">
@@ -323,7 +321,7 @@
               已有账号？
               <button
                 type="button"
-                @click="toggleModal('login')"
+                @click="modalStore.toggleModal('login')"
                 class="text-primary hover:underline"
               >
                 立即登录
@@ -339,6 +337,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useUserStore } from "@/stores/userStore";
+import { useModalStore } from "@/stores/modalStore";
 import Modal from "@/components/Modal.vue";
 import { register as apiRegister } from "@/api/auth";
 import { message } from "@/utils/alertUtils";
@@ -347,24 +346,19 @@ import { useRoute } from "vue-router";
 const showMobileMenu = ref(false);
 const currentYear = computed(() => new Date().getFullYear());
 const userStore = useUserStore();
+const modalStore = useModalStore();
 
 // 路由对象
 const route = useRoute();
-
-// 登录注册弹窗状态
-const showLoginModal = ref(false);
-const showRegisterModal = ref(false);
 
 // 监听路由查询参数，自动打开弹窗
 watch(
   () => route.query.modal,
   (modal) => {
     if (modal === "login") {
-      showLoginModal.value = true;
-      showRegisterModal.value = false;
+      modalStore.openLoginModal();
     } else if (modal === "register") {
-      showRegisterModal.value = true;
-      showLoginModal.value = false;
+      modalStore.openRegisterModal();
     }
   },
   { immediate: true }
@@ -401,21 +395,6 @@ const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value;
 };
 
-// 切换登录注册弹窗
-const toggleModal = (type: "login" | "register") => {
-  if (type === "login") {
-    showRegisterModal.value = false;
-    setTimeout(() => {
-      showLoginModal.value = true;
-    }, 100);
-  } else {
-    showLoginModal.value = false;
-    setTimeout(() => {
-      showRegisterModal.value = true;
-    }, 100);
-  }
-};
-
 // 处理登录
 const handleLogin = async () => {
   loginLoading.value = true;
@@ -424,7 +403,7 @@ const handleLogin = async () => {
       loginForm.value.username,
       loginForm.value.password
     );
-    showLoginModal.value = false;
+    modalStore.showLoginModal = false;
     loginForm.value = { username: "", password: "" };
     message.success("登录成功");
   } catch (error: any) {
@@ -446,7 +425,7 @@ const handleRegister = async () => {
   registerLoading.value = true;
   try {
     await apiRegister(registerForm.value);
-    showRegisterModal.value = false;
+    modalStore.showRegisterModal = false;
     registerForm.value = {
       username: "",
       email: "",
@@ -455,7 +434,7 @@ const handleRegister = async () => {
     };
     message.success("注册成功，请登录");
     setTimeout(() => {
-      showLoginModal.value = true;
+      modalStore.openLoginModal();
     }, 1000);
   } catch (error: any) {
     console.error("注册失败:", error);

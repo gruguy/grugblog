@@ -95,7 +95,7 @@ export const useActivityStore = defineStore("activity", () => {
         generatedData.push({
           date: formattedDate,
           count,
-          description: count > 0 ? `${count} 篇文章` : "无文章",
+          description: count > 0 ? `${count} 条内容` : "无内容",
         });
       }
 

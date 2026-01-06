@@ -8,6 +8,9 @@ import { Category } from "./entities/category.entity";
 import { Tag } from "./entities/tag.entity";
 import { ArticleCollect } from "./entities/collect.entity";
 import { ArticleLike } from "./entities/like.entity";
+import { MusicModule } from "../music/music.module";
+import { ImageModule } from "../image/image.module";
+import { VideoModule } from "../video/video.module";
 
 console.log("ArticleModule - 正在加载...");
 
@@ -20,6 +23,9 @@ console.log("ArticleModule - 正在加载...");
       ArticleCollect,
       ArticleLike,
     ]),
+    MusicModule,
+    ImageModule,
+    VideoModule,
   ],
   controllers: [ArticleController],
   providers: [ArticleService],

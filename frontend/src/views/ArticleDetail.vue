@@ -214,6 +214,7 @@ import { marked } from "marked";
 import MainLayout from "@/layouts/MainLayout.vue";
 import { useContentStore } from "@/stores/contentStore";
 import { useUserStore } from "@/stores/userStore";
+import { useModalStore } from "@/stores/modalStore";
 import dayjs from "dayjs";
 import Comment from "@/components/Comment.vue";
 import MarkdownAnchor from "@/components/MarkdownAnchor.vue";
@@ -238,6 +239,7 @@ import {
 const route = useRoute();
 const contentStore = useContentStore();
 const userStore = useUserStore();
+const modalStore = useModalStore();
 
 // 状态管理
 const rawRenderedContent = computed(() => {
@@ -311,6 +313,12 @@ const getCategoryTagClass = (categoryId: number) => {
 
 // 点赞功能
 const toggleLike = async () => {
+  // 检查用户是否登录
+  if (!userStore.isLoggedIn) {
+    modalStore.openLoginModal();
+    return;
+  }
+
   try {
     const articleId = parseInt(route.params.id as string);
     console.log("Calling toggleArticleLike with articleId:", articleId);
@@ -334,6 +342,12 @@ const toggleLike = async () => {
 
 // 收藏功能
 const toggleCollect = async () => {
+  // 检查用户是否登录
+  if (!userStore.isLoggedIn) {
+    modalStore.openLoginModal();
+    return;
+  }
+
   try {
     const articleId = parseInt(route.params.id as string);
     console.log("Calling toggleArticleCollect with articleId:", articleId);
@@ -399,6 +413,12 @@ const userInfo = computed(() => ({
 
 // 处理评论点赞
 const handleCommentLike = async (commentId: number) => {
+  // 检查用户是否登录
+  if (!userStore.isLoggedIn) {
+    modalStore.openLoginModal();
+    return;
+  }
+
   try {
     // 调用后端API切换点赞状态
     const response = await toggleCommentLike(commentId);
