@@ -172,7 +172,25 @@
 
       <!-- 评论区 -->
       <div class="mb-8 bg-white p-4">
-        <h3 class="text-xl font-bold mb-4">评论 ({{ comments.length }})</h3>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold">评论 ({{ comments.length }})</h3>
+          <div class="comment-sort flex">
+            <button
+              @click="sortType = 'hot'"
+              :class="{ active: sortType === 'hot' }"
+              class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-l-md transition-colors"
+            >
+              最热
+            </button>
+            <button
+              @click="sortType = 'new'"
+              :class="{ active: sortType === 'new' }"
+              class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-r-md border-l border-gray-300 transition-colors"
+            >
+              最新
+            </button>
+          </div>
+        </div>
 
         <!-- 发表评论表单 -->
         <Comment
@@ -186,7 +204,7 @@
         <div class="mb-6">
           <!-- 评论项 -->
           <Comment
-            v-for="comment in comments"
+            v-for="comment in sortedComments"
             :key="comment.id"
             :comment="comment"
             :on-reply="handleCommentReply"
@@ -196,7 +214,7 @@
 
           <!-- 占位评论 -->
           <div
-            v-if="comments.length === 0"
+            v-if="sortedComments.length === 0"
             class="text-center py-8 text-muted-foreground bg-white p-4 rounded-lg"
           >
             暂无评论，快来抢沙发吧！
@@ -206,6 +224,18 @@
     </article>
   </MainLayout>
 </template>
+
+<style scoped>
+.comment-sort button.active {
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 500;
+}
+
+.comment-sort button {
+  transition: all 0.2s ease;
+}
+</style>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
@@ -240,6 +270,41 @@ const route = useRoute();
 const contentStore = useContentStore();
 const userStore = useUserStore();
 const modalStore = useModalStore();
+
+// Comment sorting state
+const sortType = ref<"hot" | "new">("hot");
+
+// Calculate total likes for a comment (including replies recursively)
+const calculateTotalLikes = (comment: any): number => {
+  let total = comment.likes || 0;
+  if (comment.replies && comment.replies.length > 0) {
+    comment.replies.forEach((reply: any) => {
+      total += calculateTotalLikes(reply);
+    });
+  }
+  return total;
+};
+
+// Sort comments by hot or new
+const sortedComments = computed(() => {
+  if (!comments.value.length) return [];
+
+  const commentsCopy = [...comments.value];
+
+  if (sortType.value === "hot") {
+    // Sort by total likes (including replies) descending
+    return commentsCopy.sort((a, b) => {
+      const totalLikesA = calculateTotalLikes(a);
+      const totalLikesB = calculateTotalLikes(b);
+      return totalLikesB - totalLikesA;
+    });
+  } else {
+    // Sort by createdAt descending (newest first)
+    return commentsCopy.sort((a, b) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }
+});
 
 // 状态管理
 const rawRenderedContent = computed(() => {

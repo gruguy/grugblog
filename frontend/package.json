@@ -3,12 +3,16 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc && vite build",
-    "preview": "vite preview",
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
+    "@nuxtjs/sitemap": "^7.5.1",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@pinia/nuxt": "^0.11.3",
     "@vueuse/core": "^10.9.0",
     "aplayer": "^1.10.1",
     "axios": "^1.6.7",
@@ -17,11 +21,13 @@
     "echarts": "^6.0.0",
     "highlight.js": "^11.9.0",
     "marked": "^11.1.1",
+    "nuxt": "^4.2.2",
     "pinia": "^2.1.7",
     "viewerjs": "^1.11.7",
     "vue": "^3.4.21",
     "vue-activity-calendar": "^1.2.2",
-    "vue-router": "^4.3.0"
+    "vue-router": "^4.3.0",
+    "vue3-captcha": "^0.3.4"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.2",

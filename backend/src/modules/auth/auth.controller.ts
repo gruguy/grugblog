@@ -27,8 +27,12 @@ export class AuthController {
   @Post("register")
   @ApiOperation({ summary: "用户注册" })
   async register(
-    @Body() body: { username: string; password: string; email: string }
+    @Body() body: { username: string; password: string; email: string; captchaToken?: string }
   ) {
+    if (!body.captchaToken) {
+      throw new Error('请完成人机验证');
+    }
+    
     const user = await this.userService.create({
       username: body.username,
       password: body.password,

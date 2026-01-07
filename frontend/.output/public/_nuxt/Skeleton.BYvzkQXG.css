@@ -1,0 +1,1 @@
+@keyframes shimmer-9d966bc4{0%{transform:translate(-100%)}to{transform:translate(100%)}}.animate-shimmer[data-v-9d966bc4]{animation:shimmer-9d966bc4 1.5s ease-in-out infinite;background-size:200% 100%}@keyframes pulse-9d966bc4{0%,to{opacity:1}50%{opacity:.5}}.animate-pulse[data-v-9d966bc4]{animation:pulse-9d966bc4 1.5s cubic-bezier(.4,0,.6,1) infinite}

@@ -4,7 +4,8 @@ import type { User } from "@/types/user";
 import { login, getUserInfo, logout } from "@/api/auth";
 
 export const useUserStore = defineStore("user", () => {
-  const token = ref<string | null>(localStorage.getItem("token"));
+  // 在 SSR 环境下，localStorage 不可用，所以初始化为 null
+  const token = ref<string | null>(process.client ? localStorage.getItem("token") : null);
   const user = ref<User | null>(null);
   const isLoggedIn = ref<boolean>(!!token.value);
 
@@ -16,7 +17,10 @@ export const useUserStore = defineStore("user", () => {
       // 添加类型断言，处理缺少createdAt和updatedAt字段的情况
       user.value = response.user as User;
       isLoggedIn.value = true;
-      localStorage.setItem("token", response.token);
+      // 只有在客户端环境下才能访问localStorage
+      if (process.client) {
+        localStorage.setItem("token", response.token);
+      }
       return response;
     } catch (error) {
       throw error;
@@ -50,7 +54,10 @@ export const useUserStore = defineStore("user", () => {
       token.value = null;
       user.value = null;
       isLoggedIn.value = false;
-      localStorage.removeItem("token");
+      // 只有在客户端环境下才能访问localStorage
+      if (process.client) {
+        localStorage.removeItem("token");
+      }
     }
   };
 
