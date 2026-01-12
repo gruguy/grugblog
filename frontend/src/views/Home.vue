@@ -133,7 +133,7 @@
                         <div class="flex items-center">
                           <div
                             v-if="!article.author?.avatar"
-                            class="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold"
+                            class="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold mr-2"
                           >
                             {{ (article.author?.nickname || article.author?.username || "U").charAt(0).toUpperCase() }}
                           </div>

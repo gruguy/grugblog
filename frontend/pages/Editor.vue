@@ -614,7 +614,7 @@ onMounted(async () => {
 
 <style scoped>
 .editor-container {
-  width: 100vw;
+  /* width: 100vw; */
   height: 100vh;
   display: flex;
   flex-direction: column;

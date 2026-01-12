@@ -3,43 +3,43 @@ import { Server } from 'node:http';
 import { resolve as resolve$1, dirname, join } from 'node:path';
 import nodeCrypto from 'node:crypto';
 import { parentPort, threadId } from 'node:worker_threads';
-import { defineEventHandler, handleCacheHeaders, splitCookiesString, createEvent, fetchWithEvent, isEvent, eventHandler, setHeaders, sendRedirect, proxyRequest, getRequestHeader, setResponseHeaders, setResponseStatus, send, getRequestHeaders, setResponseHeader, appendResponseHeader, getRequestURL, getResponseHeader, removeResponseHeader, createError, getQuery as getQuery$1, readBody, getRequestProtocol, getRequestHost, setHeader, getHeader, createApp, createRouter as createRouter$1, toNodeListener, lazyEventHandler, getResponseStatus, getRouterParam, getResponseStatusText } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/h3/dist/index.mjs';
-import { escapeHtml } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/@vue/shared/dist/shared.cjs.js';
-import axios from 'file://E:/workspace/Git/grugblog/frontend/node_modules/axios/index.js';
-import { defineStore } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/pinia/dist/pinia.mjs';
-import { toValue, isVNode, isRef, ref } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/vue/index.mjs';
-import { createRenderer, getRequestDependencies, getPreloadLinks, getPrefetchLinks } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/vue-bundle-renderer/dist/runtime.mjs';
-import { parseURL, withoutBase, joinURL, getQuery, withQuery, hasProtocol, withHttps, withTrailingSlash, decodePath, withLeadingSlash, withoutTrailingSlash, joinRelativeURL, withBase, parsePath, stringifyQuery, parseQuery, encodePath, stringifyParsedURL } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/ufo/dist/index.mjs';
-import destr, { destr as destr$1 } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/destr/dist/index.mjs';
+import { defineEventHandler, handleCacheHeaders, splitCookiesString, createEvent, fetchWithEvent, isEvent, eventHandler, setHeaders, sendRedirect, proxyRequest, getRequestHeader, setResponseHeaders, setResponseStatus, send, getRequestHeaders, setResponseHeader, appendResponseHeader, getRequestURL, getResponseHeader, removeResponseHeader, createError, getQuery as getQuery$1, readBody, getRequestProtocol, getRequestHost, setHeader, getHeader, createApp, createRouter as createRouter$1, toNodeListener, lazyEventHandler, getResponseStatus, getRouterParam, getResponseStatusText } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/h3/dist/index.mjs';
+import { escapeHtml } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/@vue/shared/dist/shared.cjs.js';
+import axios from 'file://E:/studio/GIT/grugblog/frontend/node_modules/axios/index.js';
+import { defineStore } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/pinia/dist/pinia.mjs';
+import { toValue, isVNode, isRef, ref } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/vue/index.mjs';
+import { createRenderer, getRequestDependencies, getPreloadLinks, getPrefetchLinks } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/vue-bundle-renderer/dist/runtime.mjs';
+import { parseURL, withoutBase, joinURL, getQuery, withQuery, hasProtocol, withHttps, withTrailingSlash, decodePath, withLeadingSlash, withoutTrailingSlash, joinRelativeURL, withBase, parsePath, stringifyQuery, parseQuery, encodePath, stringifyParsedURL } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/ufo/dist/index.mjs';
+import destr, { destr as destr$1 } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/destr/dist/index.mjs';
 import process$1 from 'node:process';
-import { renderToString } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/vue/server-renderer/index.mjs';
-import { klona } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/klona/dist/index.mjs';
-import defu, { defuFn, defu as defu$1, createDefu } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/defu/dist/defu.mjs';
-import { snakeCase } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/scule/dist/index.mjs';
-import { createHead as createHead$1, propsToString, renderSSRHead } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/unhead/dist/server.mjs';
-import { stringify, uneval } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/devalue/index.js';
-import { createHooks } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/hookable/dist/index.mjs';
-import { createFetch, Headers as Headers$1 } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/ofetch/dist/node.mjs';
-import { fetchNodeRequestHandler, callNodeRequestHandler } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/node-mock-http/dist/index.mjs';
-import { createStorage, prefixStorage } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/unstorage/dist/index.mjs';
-import unstorage_47drivers_47fs from 'file://E:/workspace/Git/grugblog/frontend/node_modules/unstorage/drivers/fs.mjs';
-import { digest } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/ohash/dist/index.mjs';
-import { toRouteMatcher, createRouter } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/radix3/dist/index.mjs';
+import { renderToString } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/vue/server-renderer/index.mjs';
+import { klona } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/klona/dist/index.mjs';
+import defu, { defuFn, defu as defu$1, createDefu } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/defu/dist/defu.mjs';
+import { snakeCase } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/scule/dist/index.mjs';
+import { createHead as createHead$1, propsToString, renderSSRHead } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/unhead/dist/server.mjs';
+import { stringify, uneval } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/devalue/index.js';
+import { createHooks } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/hookable/dist/index.mjs';
+import { createFetch, Headers as Headers$1 } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/ofetch/dist/node.mjs';
+import { fetchNodeRequestHandler, callNodeRequestHandler } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/node-mock-http/dist/index.mjs';
+import { createStorage, prefixStorage } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/unstorage/dist/index.mjs';
+import unstorage_47drivers_47fs from 'file://E:/studio/GIT/grugblog/frontend/node_modules/unstorage/drivers/fs.mjs';
+import { digest } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/ohash/dist/index.mjs';
+import { toRouteMatcher, createRouter } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/radix3/dist/index.mjs';
 import { readFile } from 'node:fs/promises';
-import consola, { createConsola, consola as consola$1 } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/consola/dist/index.mjs';
-import { ErrorParser } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/youch-core/build/index.js';
-import { Youch } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/youch/build/index.js';
-import { SourceMapConsumer } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/source-map/source-map.js';
-import devalue from 'file://E:/workspace/Git/grugblog/frontend/node_modules/@nuxt/devalue/dist/devalue.mjs';
+import consola, { createConsola, consola as consola$1 } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/consola/dist/index.mjs';
+import { ErrorParser } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/youch-core/build/index.js';
+import { Youch } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/youch/build/index.js';
+import { SourceMapConsumer } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/source-map/source-map.js';
+import devalue from 'file://E:/studio/GIT/grugblog/frontend/node_modules/@nuxt/devalue/dist/devalue.mjs';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { getContext } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/unctx/dist/index.mjs';
-import { captureRawStackTrace, parseRawStackTrace } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/errx/dist/index.js';
+import { getContext } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/unctx/dist/index.mjs';
+import { captureRawStackTrace, parseRawStackTrace } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/errx/dist/index.js';
 import { promises } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname as dirname$1, resolve as resolve$2 } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/pathe/dist/index.mjs';
-import { walkResolver } from 'file://E:/workspace/Git/grugblog/frontend/node_modules/unhead/dist/utils.mjs';
+import { dirname as dirname$1, resolve as resolve$2 } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/pathe/dist/index.mjs';
+import { walkResolver } from 'file://E:/studio/GIT/grugblog/frontend/node_modules/unhead/dist/utils.mjs';
 
-const serverAssets = [{"baseName":"server","dir":"E:/workspace/Git/grugblog/frontend/server/assets"}];
+const serverAssets = [{"baseName":"server","dir":"E:/studio/GIT/grugblog/frontend/server/assets"}];
 
 const assets$1 = createStorage();
 
@@ -51,11 +51,11 @@ const storage = createStorage({});
 
 storage.mount('/assets', assets$1);
 
-storage.mount('root', unstorage_47drivers_47fs({"driver":"fs","readOnly":true,"base":"E:/workspace/Git/grugblog/frontend","watchOptions":{"ignored":[null]}}));
-storage.mount('src', unstorage_47drivers_47fs({"driver":"fs","readOnly":true,"base":"E:/workspace/Git/grugblog/frontend/server","watchOptions":{"ignored":[null]}}));
-storage.mount('build', unstorage_47drivers_47fs({"driver":"fs","readOnly":false,"base":"E:/workspace/Git/grugblog/frontend/.nuxt"}));
-storage.mount('cache', unstorage_47drivers_47fs({"driver":"fs","readOnly":false,"base":"E:/workspace/Git/grugblog/frontend/.nuxt/cache"}));
-storage.mount('data', unstorage_47drivers_47fs({"driver":"fs","base":"E:/workspace/Git/grugblog/frontend/.data/kv"}));
+storage.mount('root', unstorage_47drivers_47fs({"driver":"fs","readOnly":true,"base":"E:/studio/GIT/grugblog/frontend","watchOptions":{"ignored":[null]}}));
+storage.mount('src', unstorage_47drivers_47fs({"driver":"fs","readOnly":true,"base":"E:/studio/GIT/grugblog/frontend/server","watchOptions":{"ignored":[null]}}));
+storage.mount('build', unstorage_47drivers_47fs({"driver":"fs","readOnly":false,"base":"E:/studio/GIT/grugblog/frontend/.nuxt"}));
+storage.mount('cache', unstorage_47drivers_47fs({"driver":"fs","readOnly":false,"base":"E:/studio/GIT/grugblog/frontend/.nuxt/cache"}));
+storage.mount('data', unstorage_47drivers_47fs({"driver":"fs","base":"E:/studio/GIT/grugblog/frontend/.data/kv"}));
 
 function useStorage(base = "") {
   return base ? prefixStorage(storage, base) : storage;
@@ -1439,7 +1439,7 @@ if (!window.__NUXT_DEVTOOLS_TIME_METRIC__) {
 window.__NUXT_DEVTOOLS_TIME_METRIC__.appInit = Date.now()
 `;
 
-const _d2Fnmk5Ra6na6xiX9YwCFj2ZhD7bUgF4GgU_vDE6Kw = (function(nitro) {
+const _8c1Di7gxRfZtJ9iiVsroUgDJQ48rpjCB3tChHTGK3w = (function(nitro) {
   nitro.hooks.hook("render:html", (htmlContext) => {
     htmlContext.head.push(`<script>${script}<\/script>`);
   });
@@ -1537,7 +1537,7 @@ function getSiteConfig(e, _options) {
   return e.context.siteConfig.get(options);
 }
 
-const _jBggDY3prX3UciIMFMiAz3b5f4WT_KfGxSxWvaXuY = defineNitroPlugin(async (nitroApp) => {
+const _AKoPgOW5d2mNfEzxxvs_MvvrZpE5m1QYP0broTwU3B4 = defineNitroPlugin(async (nitroApp) => {
   nitroApp.hooks.hook("render:html", async (ctx, { event }) => {
     const routeOptions = getRouteRules(event);
     const isIsland = process.env.NUXT_COMPONENT_ISLANDS && event.path.startsWith("/__nuxt_island");
@@ -1552,7 +1552,7 @@ const _jBggDY3prX3UciIMFMiAz3b5f4WT_KfGxSxWvaXuY = defineNitroPlugin(async (nitr
   });
 });
 
-const rootDir = "E:/workspace/Git/grugblog/frontend";
+const rootDir = "E:/studio/GIT/grugblog/frontend";
 
 const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"Grug Blog 是一个分享技术与生活的博客平台，专注于前端开发、后端开发、人工智能等领域。"},{"name":"keywords","content":"技术博客,前端开发,后端开发,人工智能,编程,分享"},{"name":"author","content":"Grug"},{"name":"robots","content":"index, follow"},{"property":"og:type","content":"website"},{"property":"og:title","content":"Grug Blog - 分享技术与生活"},{"property":"og:description","content":"Grug Blog 是一个分享技术与生活的博客平台，专注于前端开发、后端开发、人工智能等领域。"},{"property":"og:url","content":"http://localhost:3005"},{"property":"og:site_name","content":"Grug Blog"},{"property":"og:image","content":"http://localhost:3005/og-image.jpg"},{"name":"twitter:card","content":"summary_large_image"},{"name":"twitter:title","content":"Grug Blog - 分享技术与生活"},{"name":"twitter:description","content":"Grug Blog 是一个分享技术与生活的博客平台，专注于前端开发、后端开发、人工智能等领域。"},{"name":"twitter:image","content":"http://localhost:3005/og-image.jpg"},{"name":"twitter:site","content":"@grugblog"},{"name":"theme-color","content":"#3b82f6"},{"name":"apple-mobile-web-app-capable","content":"yes"},{"name":"apple-mobile-web-app-status-bar-style","content":"black-translucent"}],"link":[{"rel":"icon","type":"image/x-icon","href":"/favicon.ico"},{"rel":"canonical","href":"http://localhost:3005"}],"style":[],"script":[],"noscript":[],"title":{"template":"%s - Grug Blog","default":"Grug Blog - 分享技术与生活"}};
 
@@ -1575,7 +1575,7 @@ const devReducers = {
   URL: (data) => data instanceof URL ? data.toString() : void 0
 };
 const asyncContext = getContext("nuxt-dev", { asyncContext: true, AsyncLocalStorage });
-const _QPjhFg7yUwf8StMobBMxz8D0CZdt1Ju8ECJZIACXPs = (nitroApp) => {
+const _yzSpVHUWfgm9Cj1gfgEpXIS0rXd5eWKVLPXkiAMKQLQ = (nitroApp) => {
   const handler = nitroApp.h3App.handler;
   nitroApp.h3App.handler = (event) => {
     return asyncContext.callAsync({ logs: [], event }, () => handler(event));
@@ -1645,9 +1645,9 @@ function onConsoleLog(callback) {
 }
 
 const plugins = [
-  _d2Fnmk5Ra6na6xiX9YwCFj2ZhD7bUgF4GgU_vDE6Kw,
-_jBggDY3prX3UciIMFMiAz3b5f4WT_KfGxSxWvaXuY,
-_QPjhFg7yUwf8StMobBMxz8D0CZdt1Ju8ECJZIACXPs
+  _8c1Di7gxRfZtJ9iiVsroUgDJQ48rpjCB3tChHTGK3w,
+_AKoPgOW5d2mNfEzxxvs_MvvrZpE5m1QYP0broTwU3B4,
+_yzSpVHUWfgm9Cj1gfgEpXIS0rXd5eWKVLPXkiAMKQLQ
 ];
 
 const assets = {};
@@ -1675,7 +1675,7 @@ function getAsset (id) {
 
 const METHODS = /* @__PURE__ */ new Set(["HEAD", "GET"]);
 const EncodingMap = { gzip: ".gz", br: ".br" };
-const __R6c5R = eventHandler((event) => {
+const _1iC8uE = eventHandler((event) => {
   if (event.method && !METHODS.has(event.method)) {
     return;
   }
@@ -1811,8 +1811,8 @@ function publicAssetsURL(...path) {
 
 const APP_ROOT_OPEN_TAG = `<${appRootTag}${propsToString(appRootAttrs)}>`;
 const APP_ROOT_CLOSE_TAG = `</${appRootTag}>`;
-const getServerEntry = () => import('file://E:/workspace/Git/grugblog/frontend/.nuxt//dist/server/server.mjs').then((r) => r.default || r);
-const getClientManifest = () => import('file://E:/workspace/Git/grugblog/frontend/.nuxt//dist/server/client.manifest.mjs').then((r) => r.default || r).then((r) => typeof r === "function" ? r() : r);
+const getServerEntry = () => import('file://E:/studio/GIT/grugblog/frontend/.nuxt//dist/server/server.mjs').then((r) => r.default || r);
+const getClientManifest = () => import('file://E:/studio/GIT/grugblog/frontend/.nuxt//dist/server/client.manifest.mjs').then((r) => r.default || r).then((r) => typeof r === "function" ? r() : r);
 const getSSRRenderer = lazyCachedFunction(async () => {
   const createSSRApp = await getServerEntry();
   if (!createSSRApp) {
@@ -2111,7 +2111,7 @@ function getNitroOrigin(e) {
   });
 }
 
-const _rkXLA_ = eventHandler(async (e) => {
+const _NH60Qz = eventHandler(async (e) => {
   if (e.context._initedSiteConfig)
     return;
   const runtimeConfig = useRuntimeConfig(e);
@@ -2162,7 +2162,7 @@ const _rkXLA_ = eventHandler(async (e) => {
   e.context._initedSiteConfig = true;
 });
 
-const _tjcwCg = eventHandler(async (e) => {
+const _yaue6d = eventHandler(async (e) => {
   const siteConfig = getSiteConfig(e);
   const nitroOrigin = getNitroOrigin(e);
   const runtimeConfig = useRuntimeConfig(e);
@@ -2630,7 +2630,7 @@ async function parseSitemapXml(xml) {
   if (!xml) {
     throw new Error("Empty XML input provided");
   }
-  const { XMLParser } = await import('file://E:/workspace/Git/grugblog/frontend/node_modules/fast-xml-parser/src/fxp.js');
+  const { XMLParser } = await import('file://E:/studio/GIT/grugblog/frontend/node_modules/fast-xml-parser/src/fxp.js');
   const parser = new XMLParser({
     isArray: (tagName) => ["url", "image", "video", "link", "tag", "price"].includes(tagName),
     removeNSPrefix: true,
@@ -2978,7 +2978,7 @@ function createSitePathResolver(e, options = {}) {
   };
 }
 
-const _NX4y8a = defineEventHandler(async (e) => {
+const _6eEUDi = defineEventHandler(async (e) => {
   const _runtimeConfig = useSitemapRuntimeConfig();
   const siteConfig = getSiteConfig(e);
   const { sitemaps: _sitemaps } = _runtimeConfig;
@@ -3003,7 +3003,7 @@ const _NX4y8a = defineEventHandler(async (e) => {
   };
 });
 
-const _vHapwd = defineEventHandler(async (e) => {
+const _WkUipy = defineEventHandler(async (e) => {
   const fixPath = createSitePathResolver(e, { absolute: false, withBase: true });
   const { sitemapName: fallbackSitemapName, cacheMaxAgeSeconds, version, xslColumns, xslTips } = useSitemapRuntimeConfig();
   setHeader(e, "Content-Type", "application/xslt+xml");
@@ -3931,28 +3931,28 @@ async function sitemapXmlEventHandler(e) {
   return createSitemap(e, Object.values(sitemaps)[0], runtimeConfig);
 }
 
-const _3631_s = defineEventHandler(sitemapXmlEventHandler);
+const _ya7P46 = defineEventHandler(sitemapXmlEventHandler);
 
-const _lazy_adVtrF = () => Promise.resolve().then(function () { return auth; });
-const _lazy_DC8Tpf = () => Promise.resolve().then(function () { return content; });
-const _lazy_1JeCVQ = () => Promise.resolve().then(function () { return request; });
-const _lazy_lhy77I = () => Promise.resolve().then(function () { return upload; });
-const _lazy_deO3pm = () => Promise.resolve().then(function () { return renderer$1; });
+const _lazy_R83ReF = () => Promise.resolve().then(function () { return auth; });
+const _lazy_s6ItVN = () => Promise.resolve().then(function () { return content; });
+const _lazy_uOXfnf = () => Promise.resolve().then(function () { return request; });
+const _lazy_qg8S4i = () => Promise.resolve().then(function () { return upload; });
+const _lazy_jH1FtN = () => Promise.resolve().then(function () { return renderer$1; });
 
 const handlers = [
-  { route: '', handler: __R6c5R, lazy: false, middleware: true, method: undefined },
-  { route: '/api/auth', handler: _lazy_adVtrF, lazy: true, middleware: false, method: undefined },
-  { route: '/api/content', handler: _lazy_DC8Tpf, lazy: true, middleware: false, method: undefined },
-  { route: '/api/request', handler: _lazy_1JeCVQ, lazy: true, middleware: false, method: undefined },
-  { route: '/api/upload', handler: _lazy_lhy77I, lazy: true, middleware: false, method: undefined },
-  { route: '/__nuxt_error', handler: _lazy_deO3pm, lazy: true, middleware: false, method: undefined },
+  { route: '', handler: _1iC8uE, lazy: false, middleware: true, method: undefined },
+  { route: '/api/auth', handler: _lazy_R83ReF, lazy: true, middleware: false, method: undefined },
+  { route: '/api/content', handler: _lazy_s6ItVN, lazy: true, middleware: false, method: undefined },
+  { route: '/api/request', handler: _lazy_uOXfnf, lazy: true, middleware: false, method: undefined },
+  { route: '/api/upload', handler: _lazy_qg8S4i, lazy: true, middleware: false, method: undefined },
+  { route: '/__nuxt_error', handler: _lazy_jH1FtN, lazy: true, middleware: false, method: undefined },
   { route: '/__nuxt_island/**', handler: _SxA8c9, lazy: false, middleware: false, method: undefined },
-  { route: '', handler: _rkXLA_, lazy: false, middleware: true, method: undefined },
-  { route: '/__site-config__/debug.json', handler: _tjcwCg, lazy: false, middleware: false, method: undefined },
-  { route: '/__sitemap__/debug.json', handler: _NX4y8a, lazy: false, middleware: false, method: undefined },
-  { route: '/__sitemap__/style.xsl', handler: _vHapwd, lazy: false, middleware: false, method: undefined },
-  { route: '/sitemap.xml', handler: _3631_s, lazy: false, middleware: false, method: undefined },
-  { route: '/**', handler: _lazy_deO3pm, lazy: true, middleware: false, method: undefined }
+  { route: '', handler: _NH60Qz, lazy: false, middleware: true, method: undefined },
+  { route: '/__site-config__/debug.json', handler: _yaue6d, lazy: false, middleware: false, method: undefined },
+  { route: '/__sitemap__/debug.json', handler: _6eEUDi, lazy: false, middleware: false, method: undefined },
+  { route: '/__sitemap__/style.xsl', handler: _WkUipy, lazy: false, middleware: false, method: undefined },
+  { route: '/sitemap.xml', handler: _ya7P46, lazy: false, middleware: false, method: undefined },
+  { route: '/**', handler: _lazy_jH1FtN, lazy: true, middleware: false, method: undefined }
 ];
 
 function createNitroApp() {

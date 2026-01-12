@@ -31,8 +31,9 @@ export class Comment {
   @Column({ nullable: true })
   parentId: number | null;
 
-  @Column({ nullable: true })
-  avatar: string;
+  // 暂时注释掉avatar字段，因为数据库中没有这个字段
+  // @Column({ nullable: true })
+  // avatar: string;
 
   @ManyToOne(() => Article, { nullable: true })
   @JoinColumn({ name: "articleId" })
@@ -55,9 +56,10 @@ export class Comment {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Column({ default: 0 })
-  likes: number;
+  // 暂时注释掉这两个字段，因为数据库中没有这些字段
+  // @Column({ default: 0 })
+  // likes: number;
 
-  @Column({ default: false })
-  liked: boolean;
+  // @Column({ default: false })
+  // liked: boolean;
 }

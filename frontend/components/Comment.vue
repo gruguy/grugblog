@@ -112,7 +112,7 @@
       />
       <!-- 评论输入框 -->
       <div class="flex-1">
-        <div class="relative mb-3 border border-[#f2f3f5] bg-[#f2f3f5] rounded-lg overflow-hidden transition-all duration-300 focus-within:border-blue-500 focus-within:bg-white">
+        <div class="relative mb-3 border border-[#f2f3f5] bg-[#f2f3f5] rounded-lg transition-all duration-300 focus-within:border-blue-500 focus-within:bg-white">
           <!-- 评论输入框 -->
           <textarea
             ref="commentTextarea"

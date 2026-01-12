@@ -111,8 +111,8 @@
         class="w-10 h-10 rounded-full object-cover border border-border"
       />
       <!-- 评论输入框 -->
-      <div class="flex-1">
-        <div class="relative mb-3 border border-[#f2f3f5] bg-[#f2f3f5] rounded-lg overflow-hidden transition-all duration-300 focus-within:border-blue-500 focus-within:bg-white">
+      <div class="flex-1 relative">
+        <div class="relative mb-3 border border-[#f2f3f5] bg-[#f2f3f5] rounded-lg  transition-all duration-300 focus-within:border-blue-500 focus-within:bg-white">
           <!-- 评论输入框 -->
           <textarea
             ref="commentTextarea"
@@ -149,21 +149,21 @@
               {{ isReplyForm ? '回复' : '发表评论' }}
             </button>
           </div>
-          <!-- 表情选择器 -->
-          <div
-            v-if="showEmojiPicker"
-            class="absolute bottom-full right-0 mb-2 bg-card rounded-lg border border-border shadow-lg p-2 grid grid-cols-8 gap-2 w-64 max-h-60 overflow-y-auto z-20"
+        </div>
+        <!-- 表情选择器 -->
+        <div
+          v-if="showEmojiPicker"
+          class="absolute right-0 mt-1 bg-white rounded-lg border border-gray-300 shadow-xl p-2 grid grid-cols-8 gap-2 w-64 max-h-60 overflow-y-auto z-50"
+        >
+          <button
+            v-for="emoji in emojis"
+            :key="emoji"
+            @click="insertEmoji(emoji)" 
+            class="text-xl p-1 rounded hover:bg-gray-100 transition-colors"
+            title="插入表情"
           >
-            <button
-              v-for="emoji in emojis"
-              :key="emoji"
-              @click="insertEmoji(emoji)"
-              class="text-xl p-1 rounded hover:bg-muted transition-colors"
-              title="插入表情"
-            >
-              {{ emoji }}
-            </button>
-          </div>
+            {{ emoji }}
+          </button>
         </div>
         <!-- 操作按钮 -->
         <div class="flex justify-end gap-2" v-if="isReplyForm">
@@ -360,7 +360,8 @@ const toggleEmojiPicker = () => {
 
 // 插入表情
 const insertEmoji = (emoji: string) => {
-  const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+  // 使用组件内的textarea引用，而不是全局查找
+  const textarea = commentTextarea.value;
   if (textarea) {
     // 获取当前光标位置
     const start = textarea.selectionStart;
