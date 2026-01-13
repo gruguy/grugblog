@@ -10,6 +10,16 @@ export const useActivityStore = defineStore("activity", () => {
   const isLoading = ref(false);
   // 错误信息
   const error = ref<string | null>(null);
+  // 签到状态
+  const checkInStatus = ref<Record<string, boolean>>({});
+
+  // 辅助函数：格式化日期为 YYYY-MM-DD 格式（使用本地时区）
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   // 获取活动数据
   const fetchActivityData = async (year?: number) => {
@@ -78,24 +88,17 @@ export const useActivityStore = defineStore("activity", () => {
       const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      // 辅助函数：格式化日期为 YYYY-MM-DD 格式（使用本地时区）
-      const formatDate = (date: Date): string => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-      };
-
       for (let i = 0; i <= diffDays; i++) {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);
         const formattedDate = formatDate(date);
         const count = activityMap.get(formattedDate) || 0;
+        const isCheckedIn = checkInStatus.value[formattedDate] || false;
 
         generatedData.push({
           date: formattedDate,
-          count,
-          description: count > 0 ? `${count} 条内容` : "无内容",
+          count: isCheckedIn ? count + 1 : count,
+          description: isCheckedIn ? "已签到" : (count > 0 ? `${count} 条内容` : "无内容"),
         });
       }
 
@@ -120,12 +123,56 @@ export const useActivityStore = defineStore("activity", () => {
     return activityData.value.reduce((sum, item) => sum + item.count, 0);
   });
 
+  // 签到功能
+  const checkIn = async () => {
+    const today = formatDate(new Date());
+    
+    // 如果今天已经签到，直接返回
+    if (checkInStatus.value[today]) {
+      return true;
+    }
+
+    try {
+      isLoading.value = true;
+      // 这里可以添加真实的签到API调用
+      // await checkInApi();
+      
+      // 模拟签到成功
+      checkInStatus.value[today] = true;
+      
+      // 更新活动数据
+      await fetchActivityData();
+      return true;
+    } catch (err: any) {
+      error.value = err.message || "签到失败";
+      console.error("签到失败:", err);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  // 检查是否已签到
+  const isCheckedInToday = computed(() => {
+    const today = formatDate(new Date());
+    return checkInStatus.value[today] || false;
+  });
+
+  // 获取签到状态
+  const getCheckInStatus = (date: string) => {
+    return checkInStatus.value[date] || false;
+  };
+
   return {
     activityData,
     isLoading,
     error,
+    checkInStatus,
     fetchActivityData,
     getActivityByDate,
     totalActivityCount,
+    checkIn,
+    isCheckedInToday,
+    getCheckInStatus,
   };
 });

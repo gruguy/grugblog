@@ -1,6 +1,10 @@
 <template>
   <!-- 评论展示 -->
-  <div v-if="!isCommentForm" :id="`comment-${comment.id}`" class="bg-white rounded-lg py-1 mb-4">
+  <div
+    v-if="!isCommentForm"
+    :id="`comment-${comment.id}`"
+    class="bg-white rounded-lg py-1 mb-4"
+  >
     <div class="flex items-start gap-3">
       <!-- 评论头像 -->
       <div
@@ -26,7 +30,7 @@
           }}</span>
         </div>
         <!-- 评论内容 -->
-        <p class="text-sm mb-2">{{ comment.content }}</p>
+        <p class="text-sm mb-2">{{ filterSensitiveWords(comment.content) }}</p>
         <!-- 操作按钮 -->
         <div class="flex items-center space-x-4">
           <!-- 时间 -->
@@ -95,14 +99,21 @@
     </div>
   </div>
   <!-- 发表评论 -->
-  <div class="bg-white rounded-lg p-4 mb-4 comment-form-component" v-if="isCommentForm">
+  <div
+    class="bg-white rounded-lg p-4 mb-4 comment-form-component"
+    v-if="isCommentForm"
+  >
     <div class="flex items-start gap-3">
       <!-- 用户头像 -->
       <div
         v-if="!userInfo.avatar"
         class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-medium text-xs border border-border"
       >
-        {{ (userInfo.nickname || userInfo.username || 'U').charAt(0).toUpperCase() }}
+        {{
+          (userInfo.nickname || userInfo.username || "U")
+            .charAt(0)
+            .toUpperCase()
+        }}
       </div>
       <img
         v-else
@@ -112,14 +123,16 @@
       />
       <!-- 评论输入框 -->
       <div class="flex-1">
-        <div class="relative mb-3 border border-[#f2f3f5] bg-[#f2f3f5] rounded-lg transition-all duration-300 focus-within:border-blue-500 focus-within:bg-white">
+        <div
+          class="relative mb-3 border border-[#f2f3f5] bg-[#f2f3f5] rounded-lg transition-all duration-300 focus-within:border-blue-500 focus-within:bg-white"
+        >
           <!-- 评论输入框 -->
           <textarea
             ref="commentTextarea"
             v-model="commentContent"
             placeholder="请输入评论内容..."
             class="w-full p-3 rounded-lg transition-all duration-300 focus:outline-none"
-            style="height: 72px; resize: none; background: transparent;"
+            style="height: 72px; resize: none; background: transparent"
             @focus="handleFocus"
             @blur="handleBlur"
             maxlength="100"
@@ -146,7 +159,7 @@
               class="px-4 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm"
               :disabled="!commentContent.trim() || commentContent.length > 100"
             >
-              {{ isReplyForm ? '回复' : '发表评论' }}
+              {{ isReplyForm ? "回复" : "发表评论" }}
             </button>
           </div>
           <!-- 表情选择器 -->
@@ -183,8 +196,20 @@
 import { ref, computed } from "vue";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/zh-cn";
+import type { Comment as CommentType } from "@/types";
+import {
+  containsSensitiveWords,
+  filterSensitiveWords,
+} from "@/utils/sensitiveFilter";
+import { message } from "@/utils/alertUtils";
+import { useApi } from "@/composables/useApi";
 
 // 扩展dayjs功能
+dayjs.extend(relativeTime);
+dayjs.locale("zh-cn");
+
+// 评论组件属性接口
 interface CommentProps {
   // 评论数据
   comment?: {
@@ -214,24 +239,111 @@ interface CommentProps {
   // 是否为评论表单
   isCommentForm?: boolean;
   // 提交评论回调
-  onSubmit?: (data: {
-    content: string;
-    parentId?: number;
-  }) => void;
+  onSubmit?: (data: { content: string; parentId?: number }) => void;
 }
 
 // 常用表情列表
 const emojis = ref([
-  "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇",
-  "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚",
-  "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩",
-  "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣",
-  "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬",
-  "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗",
-  "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯",
-  "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐",
-  "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈",
-  "👿", "👹", "👺", "🤡", "💩", "👻", "💀", "☠️", "👽", "👾"
+  "😀",
+  "😃",
+  "😄",
+  "😁",
+  "😆",
+  "😅",
+  "😂",
+  "🤣",
+  "😊",
+  "😇",
+  "🙂",
+  "🙃",
+  "😉",
+  "😌",
+  "😍",
+  "🥰",
+  "😘",
+  "😗",
+  "😙",
+  "😚",
+  "😋",
+  "😛",
+  "😝",
+  "😜",
+  "🤪",
+  "🤨",
+  "🧐",
+  "🤓",
+  "😎",
+  "🤩",
+  "🥳",
+  "😏",
+  "😒",
+  "😞",
+  "😔",
+  "😟",
+  "😕",
+  "🙁",
+  "☹️",
+  "😣",
+  "😖",
+  "😫",
+  "😩",
+  "🥺",
+  "😢",
+  "😭",
+  "😤",
+  "😠",
+  "😡",
+  "🤬",
+  "🤯",
+  "😳",
+  "🥵",
+  "🥶",
+  "😱",
+  "😨",
+  "😰",
+  "😥",
+  "😓",
+  "🤗",
+  "🤔",
+  "🤭",
+  "🤫",
+  "🤥",
+  "😶",
+  "😐",
+  "😑",
+  "😬",
+  "🙄",
+  "😯",
+  "😦",
+  "😧",
+  "😮",
+  "😲",
+  "🥱",
+  "😴",
+  "🤤",
+  "😪",
+  "😵",
+  "🤐",
+  "🥴",
+  "🤢",
+  "🤮",
+  "🤧",
+  "😷",
+  "🤒",
+  "🤕",
+  "🤑",
+  "🤠",
+  "😈",
+  "👿",
+  "👹",
+  "👺",
+  "🤡",
+  "💩",
+  "👻",
+  "💀",
+  "☠️",
+  "👽",
+  "👾",
 ]);
 
 const props = withDefaults(defineProps<CommentProps>(), {
@@ -239,16 +351,16 @@ const props = withDefaults(defineProps<CommentProps>(), {
   userInfo: () => ({}),
   comment: () => ({
     id: 0,
-    content: '',
-    author: '',
-    createdAt: '',
+    content: "",
+    author: "",
+    createdAt: "",
     likes: 0,
     liked: false,
     replies: [],
-    user: {}
+    user: {},
   }),
   onLike: () => {},
-  onSubmit: () => {}
+  onSubmit: () => {},
 });
 
 dayjs.extend(relativeTime);
@@ -360,7 +472,7 @@ const toggleEmojiPicker = () => {
 
 // 插入表情
 const insertEmoji = (emoji: string) => {
-  const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+  const textarea = document.querySelector("textarea") as HTMLTextAreaElement;
   if (textarea) {
     // 获取当前光标位置
     const start = textarea.selectionStart;
@@ -388,12 +500,12 @@ const insertEmoji = (emoji: string) => {
 // 提交评论
 const submitComment = () => {
   if (!commentContent.value.trim()) return;
-  
+
   props.onSubmit({
     content: commentContent.value.trim(),
-    parentId: replyToCommentId.value || undefined
+    parentId: replyToCommentId.value || undefined,
   });
-  
+
   // 重置表单
   resetForm();
 };
@@ -404,7 +516,7 @@ const startReply = (comment: any) => {
   replyToCommentId.value = comment.id;
   replyToAuthor.value = comment.author;
   commentContent.value = `@${comment.author} `;
-  
+
   // 等待DOM更新后自动focus输入框
   setTimeout(() => {
     if (commentTextarea.value) {
@@ -430,9 +542,9 @@ const resetForm = () => {
   isReplyForm.value = false;
   replyToCommentId.value = null;
   replyToAuthor.value = "";
-  
+
   // 恢复输入框高度
-  const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+  const textarea = document.querySelector("textarea") as HTMLTextAreaElement;
   if (textarea) {
     textarea.style.height = "72px";
   }
@@ -441,6 +553,6 @@ const resetForm = () => {
 // 暴露方法给父组件
 defineExpose({
   startReply,
-  cancelReply
+  cancelReply,
 });
 </script>

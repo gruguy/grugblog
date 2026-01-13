@@ -50,7 +50,7 @@ export const useApi = () => {
   };
 
   const getUserInfo = async () => {
-    return await $axios.get("/auth/me");
+    return await $axios.get("/auth/user");
   };
 
   const logout = async () => {
@@ -97,6 +97,92 @@ export const useApi = () => {
     return await $axios.post(`/comments/${commentId}/like`);
   };
 
+  // 用户内容相关 API
+  const getUserLikedArticles = async () => {
+    return await $axios.get("/articles/user/liked");
+  };
+
+  const getUserCollectedArticles = async () => {
+    return await $axios.get("/articles/user/collected");
+  };
+
+  const updateUserInfo = async (data: {
+    nickname?: string;
+    bio?: string;
+    avatar?: string;
+  }) => {
+    return await $axios.put("/user/info", data);
+  };
+
+  const getAuthorRanking = async () => {
+    return await $axios.get("/user/ranking");
+  };
+
+  const followUser = async (userId: number) => {
+    return await $axios.post(`/user/follow/${userId}`);
+  };
+
+  const unfollowUser = async (userId: number) => {
+    return await $axios.delete(`/user/follow/${userId}`);
+  };
+
+  const checkFollowStatus = async (userId: number) => {
+    return await $axios.get(`/user/follow/${userId}/status`);
+  };
+
+  const getFollowedAuthors = async () => {
+    return await $axios.get("/user/following");
+  };
+
+  // 文章草稿相关 API
+  const saveArticleDraft = async (data: {
+    title: string;
+    content: string;
+    categoryId?: number;
+    tags?: string[];
+    status?: "draft";
+  }) => {
+    return await $axios.post("/articles/drafts", data);
+  };
+
+  const publishArticle = async (data: {
+    title: string;
+    content: string;
+    categoryId?: number;
+    tags?: string[];
+    status?: "published";
+  }) => {
+    return await $axios.post("/articles", data);
+  };
+
+  const getUserDrafts = async () => {
+    return await $axios.get("/articles/drafts");
+  };
+
+  const getDraftById = async (id: number) => {
+    return await $axios.get(`/articles/drafts/${id}`);
+  };
+
+  // 活动数据相关 API
+  const getActivityData = async (year?: number) => {
+    return await $axios.get("/articles/activity", {
+      params: year ? { year } : {},
+    });
+  };
+
+  // 消息相关 API
+  const getMessages = async (params?: any) => {
+    return await $axios.get("/messages", { params });
+  };
+
+  const markMessageAsRead = async (id: number) => {
+    return await $axios.put(`/messages/${id}/read`);
+  };
+
+  const markAllMessagesAsRead = async () => {
+    return await $axios.put("/messages/read-all");
+  };
+
   return {
     // 内容相关 API
     getArticles,
@@ -105,11 +191,18 @@ export const useApi = () => {
     getImageList,
     getVideoList,
     getCategories,
+    getActivityData,
     // 用户相关 API
     login,
     register,
     getUserInfo,
     logout,
+    updateUserInfo,
+    getAuthorRanking,
+    followUser,
+    unfollowUser,
+    checkFollowStatus,
+    getFollowedAuthors,
     // 文章交互相关 API
     toggleArticleLike,
     checkArticleLikeStatus,
@@ -118,5 +211,16 @@ export const useApi = () => {
     getArticleComments,
     createArticleComment,
     toggleCommentLike,
+    getUserLikedArticles,
+    getUserCollectedArticles,
+    // 文章草稿相关 API
+    saveArticleDraft,
+    publishArticle,
+    getUserDrafts,
+    getDraftById,
+    // 消息相关 API
+    getMessages,
+    markMessageAsRead,
+    markAllMessagesAsRead,
   };
 };

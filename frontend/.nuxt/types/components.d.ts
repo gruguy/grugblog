@@ -26,6 +26,7 @@ interface _GlobalComponents {
   'MarkdownAnchor': typeof import("../../components/MarkdownAnchor.vue").default
   'Message': typeof import("../../components/Message.vue").default
   'Modal': typeof import("../../components/Modal.vue").default
+  'Popup': typeof import("../../components/Popup.vue").default
   'PuzzleCaptcha': typeof import("../../components/PuzzleCaptcha.vue").default
   'Skeleton': typeof import("../../components/Skeleton.vue").default
   'SlideCaptcha': typeof import("../../components/SlideCaptcha.vue").default
@@ -65,6 +66,7 @@ interface _GlobalComponents {
   'LazyMarkdownAnchor': LazyComponent<typeof import("../../components/MarkdownAnchor.vue").default>
   'LazyMessage': LazyComponent<typeof import("../../components/Message.vue").default>
   'LazyModal': LazyComponent<typeof import("../../components/Modal.vue").default>
+  'LazyPopup': LazyComponent<typeof import("../../components/Popup.vue").default>
   'LazyPuzzleCaptcha': LazyComponent<typeof import("../../components/PuzzleCaptcha.vue").default>
   'LazySkeleton': LazyComponent<typeof import("../../components/Skeleton.vue").default>
   'LazySlideCaptcha': LazyComponent<typeof import("../../components/SlideCaptcha.vue").default>

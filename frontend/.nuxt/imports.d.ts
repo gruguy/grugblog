@@ -32,9 +32,11 @@ export { definePageMeta } from '../node_modules/nuxt/dist/pages/runtime/composab
 export { defineLazyHydrationComponent } from '#app/composables/lazy-hydration';
 export { useApi } from '../composables/useApi';
 export { message, alert, prompt, confirm } from '../utils/alertUtils';
+export { formatDate, formatDateFromNow } from '../utils/formatDate';
 export { containsSensitiveWords, filterSensitiveWords, getSensitiveWords, SensitiveCheckResult } from '../utils/sensitiveFilter';
 export { useActivityStore } from '../stores/activityStore';
 export { useContentStore } from '../stores/contentStore';
+export { useMessageStore, Message } from '../stores/messageStore';
 export { useModalStore } from '../stores/modalStore';
 export { useThemeStore } from '../stores/themeStore';
 export { useUserStore } from '../stores/userStore';

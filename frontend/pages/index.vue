@@ -3,7 +3,7 @@
   <Banner />
 
   <!-- 三栏布局 -->
-  <div class="grid grid-cols-1 lg:grid-cols-[180px_1fr_300px] gap-8">
+  <div class="grid grid-cols-1 lg:grid-cols-[180px_1fr_300px] gap-4">
     <!-- 左侧：文章分类 -->
     <aside class="bg-card border border-border">
       <div class="p-4">
@@ -247,11 +247,13 @@
       <!-- 用户信息 -->
       <div class="bg-card rounded-lg border border-border p-4">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="font-bold text-lg">下午好！</h3>
+          <h3 class="font-bold text-lg">{{ greeting }}</h3>
           <button
             class="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/90 transition-colors"
+            :disabled="hasCheckedIn"
+            @click="handleCheckIn"
           >
-            去签到
+            {{ hasCheckedIn ? "已签到" : "去签到" }}
           </button>
         </div>
         <p class="text-sm text-muted-foreground">点亮社区的每一天</p>
@@ -344,12 +346,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from "vue";
+import { ref, onMounted, computed, onUnmounted, watch } from "vue";
 import Empty from "~/components/Empty.vue";
 import Skeleton from "~/components/Skeleton.vue";
 import Banner from "~/components/Banner.vue";
 import { useContentStore } from "~/stores/contentStore";
 import { useUserStore } from "~/stores/userStore";
+import { useActivityStore } from "~/stores/activityStore";
 import {
   getAuthorRanking,
   followUser,
@@ -360,6 +363,57 @@ import { message } from "~/utils/alertUtils";
 
 const contentStore = useContentStore();
 const userStore = useUserStore();
+const activityStore = useActivityStore();
+
+// 动态问候语计算属性
+const greeting = computed(() => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return "早上好！";
+  } else if (hour >= 12 && hour < 18) {
+    return "下午好！";
+  } else if (hour >= 18 && hour < 23) {
+    return "晚上好！";
+  } else {
+    return "凌晨好！";
+  }
+});
+
+// 签到状态，从activityStore获取
+const hasCheckedIn = computed(() => activityStore.isCheckedInToday);
+
+// 监听activityStore的签到状态变化
+watch(
+  () => activityStore.isCheckedInToday,
+  (newValue) => {
+    console.log("签到状态变化:", newValue);
+  }
+);
+
+// 签到功能
+const handleCheckIn = async () => {
+  if (!userStore.isLoggedIn) {
+    message.error("请先登录");
+    return;
+  }
+  try {
+    const success = await activityStore.checkIn();
+    if (success) {
+      message.success("签到成功");
+    } else {
+      message.error("签到失败，请稍后重试");
+    }
+  } catch (error) {
+    console.error("签到失败:", error);
+    message.error("签到失败，请稍后重试");
+  }
+};
+
+// 初始化签到状态
+onMounted(async () => {
+  // 获取活动数据和签到状态
+  await activityStore.fetchActivityData();
+});
 
 // 首页SEO配置
 useHead({

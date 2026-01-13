@@ -55,27 +55,100 @@
               <!-- 已登录状态 -->
               <template v-else>
                 <!-- 消息图标 -->
-                <button
-                  class="p-2 rounded-full hover:bg-muted transition-colors relative"
-                  title="消息"
+                <div
+                  class="relative"
+                  ref="messageIconRef"
+                  @mouseenter="messageStore.openMessagePopup"
+                  @mouseleave="handleMessagePopupMouseLeave"
                 >
-                  <svg
-                    class="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <button
+                    class="p-2 rounded-full hover:bg-muted transition-colors relative"
+                    title="消息"
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    ></path>
-                  </svg>
-                  <span
-                    class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"
-                  ></span>
-                </button>
+                    <svg
+                      class="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                      ></path>
+                    </svg>
+                    <span
+                      v-if="messageStore.unreadCount > 0"
+                      class="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center"
+                    >
+                      {{ messageStore.unreadCount }}
+                    </span>
+                  </button>
+
+                  <!-- 消息弹窗 -->
+                  <Popup
+                    ref="messagePopupRef"
+                    :visible="messageStore.showMessagePopup"
+                    title="消息中心"
+                    @close="messageStore.closeMessagePopup"
+                    :show-mask="false"
+                    position="relative"
+                    :custom-style="messagePopupStyle"
+                    @mouseenter="handleMessagePopupMouseEnter"
+                    @mouseleave="handleMessagePopupMouseLeave"
+                  >
+                    <div class="space-y-4">
+                      <Empty
+                        v-if="messageStore.messages.length === 0"
+                        title="暂无消息"
+                        description="还没有人关注你或给你点赞，继续努力吧！"
+                      />
+                      <div
+                        v-for="msg in messageStore.messages"
+                        :key="msg.id"
+                        class="flex items-start gap-4 p-3 rounded-md hover:bg-muted transition-colors"
+                      >
+                        <!-- 用户头像 -->
+                        <div class="flex-shrink-0">
+                          <div
+                            v-if="!msg.fromUser.avatar"
+                            class="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-medium text-sm border border-border"
+                          >
+                            {{ msg.fromUser.username.charAt(0).toUpperCase() }}
+                          </div>
+                          <img
+                            v-else
+                            :src="msg.fromUser.avatar"
+                            alt="头像"
+                            class="w-12 h-12 rounded-full object-cover border border-border"
+                          />
+                        </div>
+
+                        <!-- 消息内容 -->
+                        <div class="flex-1">
+                          <div class="flex items-center gap-2 mb-1">
+                            <span class="font-medium">{{
+                              msg.fromUser.username
+                            }}</span>
+                            <span class="text-sm text-muted-foreground">{{
+                              msg.content
+                            }}</span>
+                          </div>
+                          <div
+                            v-if="msg.articleTitle"
+                            class="text-sm text-primary hover:underline mb-1"
+                          >
+                            {{ msg.articleTitle }}
+                          </div>
+                          <div class="text-xs text-muted-foreground">
+                            {{ msg.createdAt }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Popup>
+                </div>
                 <!-- 个人头像和用户名 -->
                 <div class="relative group">
                   <button class="flex items-center gap-2">
@@ -384,8 +457,11 @@
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useUserStore } from "@/stores/userStore";
 import { useModalStore } from "@/stores/modalStore";
+import { useMessageStore } from "@/stores/messageStore";
 import Modal from "@/components/Modal.vue";
 import DragCaptcha from "@/components/DragCaptcha.vue";
+import Popup from "@/components/Popup.vue";
+import Empty from "@/components/Empty.vue";
 import { register as apiRegister } from "@/api/auth";
 import { message } from "@/utils/alertUtils";
 import { useRoute } from "vue-router";
@@ -394,6 +470,44 @@ const showMobileMenu = ref(false);
 const currentYear = computed(() => new Date().getFullYear());
 const userStore = useUserStore();
 const modalStore = useModalStore();
+const messageStore = useMessageStore();
+
+// 消息图标引用，用于定位弹窗
+const messageIconRef = ref<HTMLElement | null>(null);
+// 消息弹窗引用
+const messagePopupRef = ref<InstanceType<typeof Popup> | null>(null);
+// 弹窗计时器引用
+const popupTimeoutRef = ref<number | null>(null);
+
+// 消息弹窗样式
+const messagePopupStyle = computed(() => {
+  return {
+    position: "absolute",
+    top: "100%",
+    right: "0",
+    marginTop: "4px",
+    width: "320px",
+    maxHeight: "400px",
+    overflowY: "auto",
+    zIndex: "50",
+  };
+});
+
+// 处理消息弹窗鼠标进入
+const handleMessagePopupMouseEnter = () => {
+  if (popupTimeoutRef.value) {
+    clearTimeout(popupTimeoutRef.value);
+    popupTimeoutRef.value = null;
+  }
+};
+
+// 处理消息弹窗鼠标离开
+const handleMessagePopupMouseLeave = () => {
+  // 延迟关闭弹窗，避免快速鼠标移动导致弹窗闪烁
+  popupTimeoutRef.value = setTimeout(() => {
+    messageStore.closeMessagePopup();
+  }, 200) as unknown as number;
+};
 
 // 路由对象
 const route = useRoute();
@@ -532,10 +646,8 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
-  // 检查登录状态
-  if (userStore.token) {
-    userStore.fetchUserInfo();
-  }
+  // 检查登录状态，确保用户信息正确初始化
+  userStore.initUserInfo();
 });
 
 onUnmounted(() => {

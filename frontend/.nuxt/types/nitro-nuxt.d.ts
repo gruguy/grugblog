@@ -1,7 +1,7 @@
 
 /// <reference path="app.config.d.ts" />
 /// <reference path="runtime-config.d.ts" />
-/// <reference types="E:/studio/GIT/grugblog/frontend/node_modules/@nuxt/nitro-server/dist/index.mjs" />
+/// <reference types="E:/workspace/Git/grugblog/frontend/node_modules/@nuxt/nitro-server/dist/index.mjs" />
 /// <reference path="../module/nuxt-site-config.d.ts" />
 /// <reference path="../module/nuxt-sitemap.d.ts" />
 /// <reference path="nitro-middleware.d.ts" />

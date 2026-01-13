@@ -32,6 +32,8 @@ declare global {
   const effect: typeof import('vue').effect
   const effectScope: typeof import('vue').effectScope
   const filterSensitiveWords: typeof import('../../utils/sensitiveFilter').filterSensitiveWords
+  const formatDate: typeof import('../../utils/formatDate').formatDate
+  const formatDateFromNow: typeof import('../../utils/formatDate').formatDateFromNow
   const getAppManifest: typeof import('../../node_modules/nuxt/dist/app/composables/manifest').getAppManifest
   const getCurrentInstance: typeof import('vue').getCurrentInstance
   const getCurrentScope: typeof import('vue').getCurrentScope
@@ -126,6 +128,7 @@ declare global {
   const useLazyFetch: typeof import('../../node_modules/nuxt/dist/app/composables/fetch').useLazyFetch
   const useLink: typeof import('vue-router').useLink
   const useLoadingIndicator: typeof import('../../node_modules/nuxt/dist/app/composables/loading-indicator').useLoadingIndicator
+  const useMessageStore: typeof import('../../stores/messageStore').useMessageStore
   const useModalStore: typeof import('../../stores/modalStore').useModalStore
   const useModel: typeof import('vue').useModel
   const useNitroOrigin: typeof import('../../node_modules/nuxt-site-config/dist/runtime/app/composables/useNitroOrigin').useNitroOrigin
@@ -208,6 +211,9 @@ declare global {
   // @ts-ignore
   export type { SensitiveCheckResult } from '../../utils/sensitiveFilter'
   import('../../utils/sensitiveFilter')
+  // @ts-ignore
+  export type { Message } from '../../stores/messageStore'
+  import('../../stores/messageStore')
 }
 // for vue template auto import
 import { UnwrapRef } from 'vue'
@@ -244,6 +250,8 @@ declare module 'vue' {
     readonly effect: UnwrapRef<typeof import('vue')['effect']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly filterSensitiveWords: UnwrapRef<typeof import('../../utils/sensitiveFilter')['filterSensitiveWords']>
+    readonly formatDate: UnwrapRef<typeof import('../../utils/formatDate')['formatDate']>
+    readonly formatDateFromNow: UnwrapRef<typeof import('../../utils/formatDate')['formatDateFromNow']>
     readonly getAppManifest: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/manifest')['getAppManifest']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
@@ -338,6 +346,7 @@ declare module 'vue' {
     readonly useLazyFetch: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/fetch')['useLazyFetch']>
     readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useLoadingIndicator: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/loading-indicator')['useLoadingIndicator']>
+    readonly useMessageStore: UnwrapRef<typeof import('../../stores/messageStore')['useMessageStore']>
     readonly useModalStore: UnwrapRef<typeof import('../../stores/modalStore')['useModalStore']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
     readonly useNitroOrigin: UnwrapRef<typeof import('../../node_modules/nuxt-site-config/dist/runtime/app/composables/useNitroOrigin')['useNitroOrigin']>

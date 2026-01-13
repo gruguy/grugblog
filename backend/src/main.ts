@@ -28,14 +28,14 @@ async function bootstrap() {
       next();
     });
 
-    // 设置API全局前缀
-    app.setGlobalPrefix("api");
+    // 设置API全局前缀（暂时注释，用于测试）
+    // app.setGlobalPrefix("api");
 
     // 全局注册拦截器和过滤器
     app.useGlobalInterceptors(new TransformInterceptor());
     app.useGlobalFilters(new HttpExceptionFilter());
 
-    const port = process.env.PORT || 3000;
+    const port = process.env.PORT || 3001;
     await app.listen(port);
     console.log(`Application is running on: http://localhost:${port}`);
   } catch (error) {

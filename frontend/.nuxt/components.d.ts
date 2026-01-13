@@ -26,6 +26,7 @@ export const ImagePicker: typeof import("../components/ImagePicker.vue").default
 export const MarkdownAnchor: typeof import("../components/MarkdownAnchor.vue").default
 export const Message: typeof import("../components/Message.vue").default
 export const Modal: typeof import("../components/Modal.vue").default
+export const Popup: typeof import("../components/Popup.vue").default
 export const PuzzleCaptcha: typeof import("../components/PuzzleCaptcha.vue").default
 export const Skeleton: typeof import("../components/Skeleton.vue").default
 export const SlideCaptcha: typeof import("../components/SlideCaptcha.vue").default
@@ -65,6 +66,7 @@ export const LazyImagePicker: LazyComponent<typeof import("../components/ImagePi
 export const LazyMarkdownAnchor: LazyComponent<typeof import("../components/MarkdownAnchor.vue").default>
 export const LazyMessage: LazyComponent<typeof import("../components/Message.vue").default>
 export const LazyModal: LazyComponent<typeof import("../components/Modal.vue").default>
+export const LazyPopup: LazyComponent<typeof import("../components/Popup.vue").default>
 export const LazyPuzzleCaptcha: LazyComponent<typeof import("../components/PuzzleCaptcha.vue").default>
 export const LazySkeleton: LazyComponent<typeof import("../components/Skeleton.vue").default>
 export const LazySlideCaptcha: LazyComponent<typeof import("../components/SlideCaptcha.vue").default>
