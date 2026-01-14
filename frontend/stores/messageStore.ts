@@ -43,32 +43,32 @@ export const useMessageStore = defineStore("message", () => {
       // 这是预期行为，因为后端可能还没有实现消息API
       // 使用模拟数据作为备选
       messages.value = [
-        {
-          id: 1,
-          type: "follow",
-          content: "关注了您",
-          fromUser: {
-            id: 2,
-            username: "张三",
-            avatar: "https://picsum.photos/id/1/40/40",
-          },
-          createdAt: "2026-01-13 10:00:00",
-          isRead: false,
-        },
-        {
-          id: 2,
-          type: "like",
-          content: "给您的文章点赞",
-          fromUser: {
-            id: 3,
-            username: "李四",
-            avatar: "https://picsum.photos/id/2/40/40",
-          },
-          articleId: 1,
-          articleTitle: "Vue 3 入门指南",
-          createdAt: "2026-01-13 09:30:00",
-          isRead: false,
-        },
+        // {
+        //   id: 1,
+        //   type: "follow",
+        //   content: "关注了您",
+        //   fromUser: {
+        //     id: 2,
+        //     username: "张三",
+        //     avatar: "https://picsum.photos/id/1/40/40",
+        //   },
+        //   createdAt: "2026-01-13 10:00:00",
+        //   isRead: false,
+        // },
+        // {
+        //   id: 2,
+        //   type: "like",
+        //   content: "给您的文章点赞",
+        //   fromUser: {
+        //     id: 3,
+        //     username: "李四",
+        //     avatar: "https://picsum.photos/id/2/40/40",
+        //   },
+        //   articleId: 1,
+        //   articleTitle: "Vue 3 入门指南",
+        //   createdAt: "2026-01-13 09:30:00",
+        //   isRead: false,
+        // },
       ];
       updateUnreadCount();
     } finally {

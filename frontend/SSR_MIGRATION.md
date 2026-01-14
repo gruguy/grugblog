@@ -31,25 +31,25 @@ frontend/
 
 ```typescript
 // src/app.ts
-import { createSSRApp } from 'vue'
-import { createPinia } from 'pinia'
-import { createRouter } from './router'
-import App from './App.vue'
-import './styles/main.css'
+import { createSSRApp } from "vue";
+import { createPinia } from "pinia";
+import { createRouter } from "./router";
+import App from "./App.vue";
+import "./styles/main.css";
 
 export function createApp() {
-  const app = createSSRApp(App)
-  const pinia = createPinia()
-  const router = createRouter()
+  const app = createSSRApp(App);
+  const pinia = createPinia();
+  const router = createRouter();
 
-  app.use(pinia)
-  app.use(router)
+  app.use(pinia);
+  app.use(router);
 
   return {
     app,
     router,
-    pinia
-  }
+    pinia,
+  };
 }
 ```
 
@@ -57,43 +57,43 @@ export function createApp() {
 
 ```typescript
 // src/entry-client.ts
-import { createApp } from './app'
+import { createApp } from "./app";
 
-const { app, router } = createApp()
+const { app, router } = createApp();
 
 // 等待路由准备就绪
 router.isReady().then(() => {
-  app.mount('#app')
-})
+  app.mount("#app");
+});
 ```
 
 ### 2.4 实现服务端入口 (entry-server.ts)
 
 ```typescript
 // src/entry-server.ts
-import type { RenderContext } from 'vite-plugin-ssr'
-import { createApp } from './app'
+import type { RenderContext } from "vite-plugin-ssr";
+import { createApp } from "./app";
 
 export async function renderPage(context: RenderContext) {
-  const { app, router, pinia } = createApp()
+  const { app, router, pinia } = createApp();
 
   // 设置当前路由
-  const url = context.url
-  router.push(url)
-  await router.isReady()
+  const url = context.url;
+  router.push(url);
+  await router.isReady();
 
   // 渲染应用
-  const appHtml = await app.renderToString()
+  const appHtml = await app.renderToString();
 
   // 获取状态，用于客户端水合
-  const state = pinia.state.value
+  const state = pinia.state.value;
 
   return {
     appHtml,
     pageContext: {
-      state
-    }
-  }
+      state,
+    },
+  };
 }
 ```
 
@@ -101,23 +101,27 @@ export async function renderPage(context: RenderContext) {
 
 ```typescript
 // src/router/index.ts
-import { createMemoryHistory, createRouter as _createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
+import {
+  createMemoryHistory,
+  createRouter as _createRouter,
+  createWebHistory,
+} from "vue-router";
+import type { RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
   // 保持现有路由配置不变
-]
+];
 
 export function createRouter() {
   // SSR 环境下使用内存历史，客户端使用浏览器历史
   const history = import.meta.env.SSR
     ? createMemoryHistory()
-    : createWebHistory()
+    : createWebHistory();
 
   return _createRouter({
     history,
-    routes
-  })
+    routes,
+  });
 }
 ```
 
@@ -125,67 +129,64 @@ export function createRouter() {
 
 ```typescript
 // vite.config.ts
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import { vitePluginSsr } from 'vite-plugin-ssr'
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+import { vitePluginSsr } from "vite-plugin-ssr";
 
 export default defineConfig({
-  plugins: [
-    vue(),
-    vitePluginSsr()
-  ],
+  plugins: [vue(), vitePluginSsr()],
   // 其他配置保持不变
-})
+});
 ```
 
 ### 2.7 创建 SSR 服务器
 
 ```typescript
 // server/index.ts
-import express from 'express'
-import { renderPage } from 'vite-plugin-ssr/express'
-import path from 'path'
+import express from "express";
+import { renderPage } from "vite-plugin-ssr/express";
+import path from "path";
 
-const isProduction = process.env.NODE_ENV === 'production'
-const root = path.resolve(process.cwd(), './frontend')
+const isProduction = process.env.NODE_ENV === "production";
+const root = path.resolve(process.cwd(), "./frontend");
 
 async function startServer() {
-  const app = express()
+  const app = express();
 
   if (isProduction) {
     // 生产环境：提供静态文件
-    app.use(express.static(path.join(root, 'dist/client')))
+    app.use(express.static(path.join(root, "dist/client")));
   } else {
     // 开发环境：使用 Vite 中间件
-    const vite = await import('vite')
+    const vite = await import("vite");
     const viteDevServer = await vite.createServer({
       root,
-      server: { middlewareMode: true }
-    })
-    app.use(viteDevServer.middlewares)
+      server: { middlewareMode: true },
+    });
+    app.use(viteDevServer.middlewares);
   }
 
   // 使用 vite-plugin-ssr 渲染页面
-  app.get('*', async (req, res, next) => {
+  app.get("*", async (req, res, next) => {
     try {
       const pageContext = {
-        url: req.originalUrl
-      }
-      const result = await renderPage(pageContext)
-      if (result.nothingRendered) return next()
-      res.send(result.renderResult)
+        url: req.originalUrl,
+      };
+      const result = await renderPage(pageContext);
+      if (result.nothingRendered) return next();
+      res.send(result.renderResult);
     } catch (error) {
-      next(error)
+      next(error);
     }
-  })
+  });
 
-  const port = process.env.PORT || 3001
+  const port = process.env.PORT || 3000;
   app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`)
-  })
+    console.log(`Server running at http://localhost:${port}`);
+  });
 }
 
-startServer()
+startServer();
 ```
 
 ### 2.8 修改 package.json
@@ -214,13 +215,13 @@ startServer()
 
 ```vue
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted } from "vue";
 
 // 只在客户端执行
 onMounted(() => {
   // 这里可以安全地使用浏览器 API
-  console.log(window.location.href)
-})
+  console.log(window.location.href);
+});
 </script>
 ```
 
@@ -230,25 +231,25 @@ onMounted(() => {
 
 ```typescript
 // src/app.ts - 可选：添加 Pinia SSR 插件
-import { createSSRApp } from 'vue'
-import { createPinia } from 'pinia'
-import { createRouter } from './router'
-import App from './App.vue'
-import './styles/main.css'
+import { createSSRApp } from "vue";
+import { createPinia } from "pinia";
+import { createRouter } from "./router";
+import App from "./App.vue";
+import "./styles/main.css";
 
 export function createApp() {
-  const app = createSSRApp(App)
-  const pinia = createPinia()
-  const router = createRouter()
+  const app = createSSRApp(App);
+  const pinia = createPinia();
+  const router = createRouter();
 
-  app.use(pinia)
-  app.use(router)
+  app.use(pinia);
+  app.use(router);
 
   return {
     app,
     router,
-    pinia
-  }
+    pinia,
+  };
 }
 ```
 
@@ -258,16 +259,16 @@ export function createApp() {
 
 ```vue
 <script setup lang="ts">
-import { useContentStore } from '../stores/contentStore'
-import { onBeforeRouteEnter } from 'vue-router'
+import { useContentStore } from "../stores/contentStore";
+import { onBeforeRouteEnter } from "vue-router";
 
-const contentStore = useContentStore()
+const contentStore = useContentStore();
 
 // 预加载数据
 onBeforeRouteEnter(async (to, from, next) => {
-  await contentStore.fetchArticleList()
-  next()
-})
+  await contentStore.fetchArticleList();
+  next();
+});
 </script>
 ```
 
@@ -335,6 +336,7 @@ npm run preview
 ### 迁移到 Nuxt.js 的步骤
 
 1. 安装 Nuxt.js
+
    ```bash
    npm init nuxt-app@latest new-project
    ```

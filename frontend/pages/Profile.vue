@@ -340,17 +340,61 @@
 
           <!-- 消息中心 -->
           <div v-else-if="activeMenu === 'messages'">
-            <h3 class="text-xl font-bold mb-6">消息中心</h3>
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-xl font-bold">消息中心</h3>
+              <button
+                @click="refreshMessages"
+                :disabled="isMessagesLoading"
+                class="text-sm text-primary hover:text-primary/80 disabled:opacity-50"
+              >
+                <svg
+                  v-if="isMessagesLoading"
+                  class="w-4 h-4 animate-spin mr-1 inline"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  ></path>
+                </svg>
+                <svg
+                  v-else
+                  class="w-4 h-4 mr-1 inline"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  ></path>
+                </svg>
+                {{ isMessagesLoading ? "刷新中..." : "刷新" }}
+              </button>
+            </div>
             <div class="space-y-4">
+              <div v-if="isMessagesLoading" class="flex justify-center py-8">
+                <div
+                  class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"
+                ></div>
+              </div>
               <Empty
-                v-if="messages.length === 0"
+                v-else-if="messages.length === 0"
                 title="暂无消息"
                 description="还没有人关注你或给你点赞，继续努力吧！"
               />
               <div
+                v-else
                 v-for="msg in messages"
                 :key="msg.id"
                 class="flex items-start gap-4 p-3 rounded-md hover:bg-muted transition-colors"
+                @click="messageStore.markAsRead(msg.id)"
               >
                 <!-- 用户头像 -->
                 <div class="flex-shrink-0">
@@ -396,9 +440,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useUserStore } from "~/stores/userStore";
 import { useActivityStore } from "~/stores/activityStore";
+import { useMessageStore } from "~/stores/messageStore";
 import type { ActivityData } from "@/types/activity";
 
 // 引入组件
@@ -407,6 +452,7 @@ import Empty from "@/components/Empty.vue";
 
 const userStore = useUserStore();
 const activityStore = useActivityStore();
+const messageStore = useMessageStore();
 const activeMenu = ref("basic");
 const fileInput = ref<HTMLInputElement | null>(null);
 
@@ -425,35 +471,15 @@ const collectedArticles = ref<any[]>([]);
 const followedAuthors = ref<any[]>([]);
 const isLoading = ref(false);
 
-// 消息数据（模拟）
-const messages = ref([
-  {
-    id: 1,
-    type: "follow",
-    content: "关注了您",
-    fromUser: {
-      id: 2,
-      username: "张三",
-      avatar: "https://picsum.photos/id/1/40/40",
-    },
-    createdAt: "2026-01-13 10:00:00",
-    isRead: false,
-  },
-  {
-    id: 2,
-    type: "like",
-    content: "给您的文章点赞",
-    fromUser: {
-      id: 3,
-      username: "李四",
-      avatar: "https://picsum.photos/id/2/40/40",
-    },
-    articleId: 1,
-    articleTitle: "Vue 3 入门指南",
-    createdAt: "2026-01-13 09:30:00",
-    isRead: false,
-  },
-]);
+// 从messageStore获取消息数据
+const messages = computed(() => messageStore.messages);
+const isMessagesLoading = computed(() => messageStore.loading);
+const unreadMessagesCount = computed(() => messageStore.unreadCount);
+
+// 手动刷新消息
+const refreshMessages = async () => {
+  await messageStore.fetchMessages();
+};
 
 // 菜单配置
 const menuItems = ref([

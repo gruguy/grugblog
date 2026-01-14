@@ -102,7 +102,7 @@
                       <Empty
                         v-if="messageStore.messages.length === 0"
                         title="暂无消息"
-                        description="还没有人关注你或给你点赞，继续努力吧！"
+                        description="还没有人关注点赞！"
                       />
                       <div
                         v-for="msg in messageStore.messages"

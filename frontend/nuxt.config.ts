@@ -107,13 +107,13 @@ export default defineNuxtConfig({
   nitro: {
     devProxy: {
       "/api": {
-        target: "http://localhost:3001",
+        target: "http://localhost:3000",
         changeOrigin: true,
       },
     },
     // 生产环境代理（部署时生效，可选）
     routeRules: {
-      "/api/**": { proxy: "http://localhost:3001/**" },
+      "/api/**": { proxy: "http://localhost:3000/**" },
     },
   },
 

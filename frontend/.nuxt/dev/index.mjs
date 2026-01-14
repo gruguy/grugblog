@@ -640,7 +640,7 @@ const _inlineRuntimeConfig = {
       },
       "/api/**": {
         "proxy": {
-          "to": "http://localhost:3001/**",
+          "to": "http://localhost:3000/**",
           "_proxyStripBase": "/api"
         }
       },
