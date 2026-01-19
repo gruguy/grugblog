@@ -39,8 +39,8 @@ export class CommentController {
       userId: req.user?.id,
     });
 
-    // 允许匿名评论，使用默认userId=0
-    const userId = req.user?.id || 0;
+    // 允许匿名评论，使用null作为userId
+    const userId = req.user?.id || null;
     return this.commentService.create(
       content,
       author,
@@ -71,8 +71,8 @@ export class CommentController {
   @Post(":id/like")
   @ApiOperation({ summary: "切换评论点赞状态" })
   async toggleLike(@Param("id") id: string, @Request() req) {
-    // 允许匿名点赞，使用默认userId=0
-    const userId = req.user?.id || 0;
+    // 允许匿名点赞，使用null作为userId
+    const userId = req.user?.id || null;
     return this.commentService.toggleLike(parseInt(id), userId);
   }
 }

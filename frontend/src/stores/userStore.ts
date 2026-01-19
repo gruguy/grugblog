@@ -1,11 +1,13 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import type { User } from "@/types/user";
 import { login, getUserInfo, logout } from "@/api/auth";
 
 export const useUserStore = defineStore("user", () => {
   // 在 SSR 环境下，localStorage 不可用，所以初始化为 null
-  const token = ref<string | null>(process.client ? localStorage.getItem("token") : null);
+  const token = ref<string | null>(
+    process.client ? localStorage.getItem("token") : null
+  );
   const user = ref<User | null>(null);
   const isLoggedIn = ref<boolean>(!!token.value);
 
@@ -60,6 +62,20 @@ export const useUserStore = defineStore("user", () => {
       }
     }
   };
+
+  // 在客户端挂载时检查localStorage中的token
+  onMounted(() => {
+    if (process.client) {
+      const storedToken = localStorage.getItem("token");
+      if (storedToken && !token.value) {
+        token.value = storedToken;
+        isLoggedIn.value = true;
+        fetchUserInfo();
+      } else if (token.value) {
+        fetchUserInfo();
+      }
+    }
+  });
 
   return {
     token,

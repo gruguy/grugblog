@@ -9,6 +9,7 @@ import {
   Patch,
   UploadedFiles,
   UseInterceptors,
+  Request,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { MusicService } from "./music.service";
@@ -20,25 +21,35 @@ import { Public } from "@/common/decorators/public.decorator";
 export class MusicController {
   constructor(private readonly musicService: MusicService) {}
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get()
   @ApiOperation({ summary: "获取音乐列表" })
-  async findAll() {
-    return this.musicService.findAll();
+  async findAll(@Request() req) {
+    const userId = req.user?.id;
+    return this.musicService.findAll({ userId });
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get(":id")
   @ApiOperation({ summary: "获取音乐详情" })
-  async findOne(@Param("id") id: string) {
-    return this.musicService.findOne(+id);
+  async findOne(@Param("id") id: string, @Request() req) {
+    const music = await this.musicService.findOne(+id);
+    // 验证音乐是否属于当前用户
+    if (music && music.userId !== req.user?.id) {
+      return { code: 403, message: "无权访问此音乐" };
+    }
+    return music;
   }
 
   @UseGuards(JwtAuthGuard)
   @Post()
   @ApiBearerAuth()
   @ApiOperation({ summary: "创建音乐" })
-  async create(@Body() musicData: any) {
+  async create(@Body() musicData: any, @Request() req) {
+    // 添加当前用户ID
+    musicData.userId = req.user.id;
     return this.musicService.create(musicData);
   }
 

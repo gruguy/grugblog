@@ -12,10 +12,12 @@ export class MusicService {
     private redisService: RedisService
   ) {}
 
-  async findAll(): Promise<Music[]> {
-    return this.musicRepository.find({
-      order: { createdAt: "DESC" },
-    });
+  async findAll(query?: { userId?: number }): Promise<Music[]> {
+    const queryBuilder = this.musicRepository.createQueryBuilder("music");
+    if (query?.userId) {
+      queryBuilder.where("music.userId = :userId", { userId: query.userId });
+    }
+    return queryBuilder.orderBy("music.createdAt", "DESC").getMany();
   }
 
   async findOne(id: number): Promise<Music | null> {

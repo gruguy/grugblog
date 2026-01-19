@@ -31,6 +31,9 @@ export class Music {
   @Column({ type: 'json', nullable: true })
   scores: string[]
 
+  @Column({ type: 'int', nullable: false })
+  userId: number
+
   @CreateDateColumn()
   createdAt: Date
 }

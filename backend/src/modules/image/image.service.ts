@@ -12,13 +12,18 @@ export class ImageService {
     private redisService: RedisService,
   ) {}
 
-  async findAll(categoryId?: number): Promise<Image[]> {
+  async findAll(query?: { userId?: number; categoryId?: number }): Promise<Image[]> {
     const queryBuilder = this.imageRepository.createQueryBuilder('image')
-
-    if (categoryId) {
-      queryBuilder.where('image.categoryId = :categoryId', { categoryId })
+    if (query?.categoryId) {
+      queryBuilder.where('image.categoryId = :categoryId', { categoryId: query.categoryId })
     }
-
+    if (query?.userId) {
+      if (queryBuilder.expressionMap.wheres.length > 0) {
+        queryBuilder.andWhere('image.userId = :userId', { userId: query.userId })
+      } else {
+        queryBuilder.where('image.userId = :userId', { userId: query.userId })
+      }
+    }
     return queryBuilder.orderBy('image.createdAt', 'DESC').getMany()
   }
 

@@ -305,9 +305,10 @@ export class ArticleService {
   /**
    * 获取所有内容类型的活动数据，按日期分组
    */
-  async getActivityData(year?: number) {
+  async getActivityData(year?: number, userId?: number) {
     const targetYear = year || new Date().getFullYear();
-    const cacheKey = `content:activity:${targetYear}`;
+    // 添加用户ID到缓存键，确保每个用户有独立缓存
+    const cacheKey = `content:activity:${userId || "public"}:${targetYear}`;
 
     // 尝试从缓存获取，如果失败则直接从数据库查询
     try {
@@ -323,32 +324,48 @@ export class ArticleService {
     // 按日期分组统计
     const activityMap = new Map<string, number>();
 
-    // 查询所有文章
-    const articles = await this.articleRepository.find({
+    // 查询文章，根据用户ID过滤
+    const articleQuery: any = {
       select: ["createdAt"],
       order: { createdAt: "DESC" },
-    });
+    };
+    if (userId) {
+      articleQuery.where = { author: { id: userId } };
+    }
+    const articles = await this.articleRepository.find(articleQuery);
     articles.forEach((article) => {
       const date = article.createdAt.toISOString().split("T")[0];
       activityMap.set(date, (activityMap.get(date) || 0) + 1);
     });
 
-    // 查询所有音乐
-    const music = await this.musicService.findAll();
+    // 查询音乐，根据用户ID过滤
+    const musicQuery: any = {};
+    if (userId) {
+      musicQuery.userId = userId;
+    }
+    const music = await this.musicService.findAll(musicQuery);
     music.forEach((item) => {
       const date = item.createdAt.toISOString().split("T")[0];
       activityMap.set(date, (activityMap.get(date) || 0) + 1);
     });
 
-    // 查询所有图片
-    const images = await this.imageService.findAll();
+    // 查询图片，根据用户ID过滤
+    const imageQuery: any = {};
+    if (userId) {
+      imageQuery.userId = userId;
+    }
+    const images = await this.imageService.findAll(imageQuery);
     images.forEach((item) => {
       const date = item.createdAt.toISOString().split("T")[0];
       activityMap.set(date, (activityMap.get(date) || 0) + 1);
     });
 
-    // 查询所有视频
-    const videos = await this.videoService.findAll();
+    // 查询视频，根据用户ID过滤
+    const videoQuery: any = {};
+    if (userId) {
+      videoQuery.userId = userId;
+    }
+    const videos = await this.videoService.findAll(videoQuery);
     videos.forEach((item) => {
       const date = item.createdAt.toISOString().split("T")[0];
       activityMap.set(date, (activityMap.get(date) || 0) + 1);

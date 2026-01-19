@@ -104,11 +104,15 @@ CREATE TABLE `music` (
   `url` VARCHAR(255) NOT NULL COMMENT '音乐文件URL',
   `duration` INT DEFAULT NULL COMMENT '时长（秒）',
   `playCount` INT NOT NULL DEFAULT 0 COMMENT '播放次数',
+  `scores` JSON DEFAULT NULL COMMENT '评分数据',
+  `userId` INT NOT NULL COMMENT '用户ID',
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_artist` (`artist`),
   KEY `idx_playCount` (`playCount`),
-  KEY `idx_createdAt` (`createdAt`)
+  KEY `idx_createdAt` (`createdAt`),
+  KEY `idx_userId` (`userId`),
+  CONSTRAINT `fk_music_user` FOREIGN KEY (`userId`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='音乐表';
 
 -- ============================================
@@ -121,11 +125,14 @@ CREATE TABLE `image` (
   `url` VARCHAR(255) NOT NULL COMMENT '图片URL',
   `thumbnail` VARCHAR(255) DEFAULT NULL COMMENT '缩略图URL',
   `categoryId` INT DEFAULT NULL COMMENT '分类ID',
+  `userId` INT NOT NULL COMMENT '用户ID',
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_categoryId` (`categoryId`),
   KEY `idx_createdAt` (`createdAt`),
-  CONSTRAINT `fk_image_category` FOREIGN KEY (`categoryId`) REFERENCES `category` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `idx_userId` (`userId`),
+  CONSTRAINT `fk_image_category` FOREIGN KEY (`categoryId`) REFERENCES `category` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_image_user` FOREIGN KEY (`userId`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='图片表';
 
 -- ============================================
@@ -139,11 +146,14 @@ CREATE TABLE `video` (
   `cover` VARCHAR(255) DEFAULT NULL COMMENT '封面图片URL',
   `duration` INT DEFAULT NULL COMMENT '时长（秒）',
   `playCount` INT NOT NULL DEFAULT 0 COMMENT '播放次数',
+  `userId` INT NOT NULL COMMENT '用户ID',
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_playCount` (`playCount`),
   KEY `idx_createdAt` (`createdAt`),
-  KEY `idx_title` (`title`(50))
+  KEY `idx_title` (`title`(50)),
+  KEY `idx_userId` (`userId`),
+  CONSTRAINT `fk_video_user` FOREIGN KEY (`userId`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='视频表';
 
 -- ============================================
@@ -193,6 +203,22 @@ CREATE TABLE `visit_log` (
   KEY `idx_path` (`path`),
   KEY `idx_createdAt` (`createdAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='访问日志表';
+
+-- ============================================
+-- 12. 用户关注表
+-- ============================================
+CREATE TABLE `user_follow` (
+  `id` INT NOT NULL AUTO_INCREMENT COMMENT '关注ID',
+  `userId` INT NOT NULL COMMENT '用户ID',
+  `followingId` INT NOT NULL COMMENT '被关注用户ID',
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_following` (`userId`, `followingId`),
+  KEY `idx_userId` (`userId`),
+  KEY `idx_followingId` (`followingId`),
+  CONSTRAINT `fk_user_follow_user` FOREIGN KEY (`userId`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_user_follow_following` FOREIGN KEY (`followingId`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户关注表';
 
 -- ============================================
 -- 初始化默认数据

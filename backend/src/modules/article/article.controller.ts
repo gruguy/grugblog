@@ -42,12 +42,14 @@ export class ArticleController {
     );
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get("activity")
-  @ApiOperation({ summary: "获取文章活动数据" })
-  async getActivityData(@Query("year") year?: string) {
+  @ApiOperation({ summary: "获取用户活动数据" })
+  async getActivityData(@Request() req, @Query("year") year?: string) {
     const yearNumber = year ? parseInt(year) : undefined;
-    return await this.articleService.getActivityData(yearNumber);
+    const userId = req.user?.id;
+    return await this.articleService.getActivityData(yearNumber, userId);
   }
 
   @Public()

@@ -478,7 +478,12 @@ const handleAiWrite = async () => {
         if (line.trim()) {
           try {
             // 解析JSON数据
-            const jsonData = JSON.parse(line.replace(/^data: /, ""));
+            const cleanedLine = line.replace(/^data: /, "").trim();
+            // 跳过空行和非JSON数据
+            if (!cleanedLine) continue;
+            
+            // 检查是否是有效的JSON
+            const jsonData = JSON.parse(cleanedLine);
             // 如果有响应内容，添加到生成的内容中
             if (jsonData.response) {
               generatedContent += jsonData.response;
@@ -494,6 +499,7 @@ const handleAiWrite = async () => {
             }
           } catch (error) {
             console.error("解析JSON数据失败:", error);
+            console.error("原始数据:", line);
           }
         }
       }

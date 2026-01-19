@@ -12,10 +12,12 @@ export class VideoService {
     private redisService: RedisService,
   ) {}
 
-  async findAll(): Promise<Video[]> {
-    return this.videoRepository.find({
-      order: { createdAt: 'DESC' },
-    })
+  async findAll(query?: { userId?: number }): Promise<Video[]> {
+    const queryBuilder = this.videoRepository.createQueryBuilder('video')
+    if (query?.userId) {
+      queryBuilder.where('video.userId = :userId', { userId: query.userId })
+    }
+    return queryBuilder.orderBy('video.createdAt', 'DESC').getMany()
   }
 
   async create(videoData: Partial<Video>): Promise<Video> {
