@@ -31,7 +31,7 @@ export class ArticleService {
     private redisService: RedisService,
     private musicService: MusicService,
     private imageService: ImageService,
-    private videoService: VideoService
+    private videoService: VideoService,
   ) {}
 
   async create(createArticleDto: CreateArticleDto): Promise<Article> {
@@ -53,7 +53,7 @@ export class ArticleService {
 
     // 清除缓存
     await this.redisService.del("articles:list:*");
-    await this.redisService.del("articles:activity_v2:*");
+    await this.redisService.del("content:activity:*");
 
     return savedArticle;
   }
@@ -135,7 +135,7 @@ export class ArticleService {
 
   async update(
     id: number,
-    updateArticleDto: UpdateArticleDto
+    updateArticleDto: UpdateArticleDto,
   ): Promise<Article> {
     // 构建要更新的字段对象
     const updateFields: any = {};
@@ -181,7 +181,7 @@ export class ArticleService {
     // 清除缓存
     await this.redisService.del("articles:list:*");
     await this.redisService.del(`article:${id}`);
-    await this.redisService.del("articles:activity_v2:*");
+    await this.redisService.del("content:activity:*");
 
     // 返回更新后的文章
     return this.findOne(id);
@@ -194,7 +194,7 @@ export class ArticleService {
     // 清除缓存
     await this.redisService.del("articles:list:*");
     await this.redisService.del(`article:${id}`);
-    await this.redisService.del("articles:activity_v2:*");
+    await this.redisService.del("content:activity:*");
   }
 
   /**
@@ -306,110 +306,173 @@ export class ArticleService {
    * 获取所有内容类型的活动数据，按日期分组
    */
   async getActivityData(year?: number, userId?: number) {
-    const targetYear = year || new Date().getFullYear();
-    // 添加用户ID到缓存键，确保每个用户有独立缓存
-    const cacheKey = `content:activity:${userId || "public"}:${targetYear}`;
-
-    // 尝试从缓存获取，如果失败则直接从数据库查询
+    console.log("开始获取活动数据 - userId:", userId, "year:", year);
     try {
-      const cached = await this.redisService.get(cacheKey);
+      const targetYear = year || new Date().getUTCFullYear();
+      console.log("目标年份:", targetYear);
+      // 添加用户ID到缓存键，确保每个用户有独立缓存
+      const cacheKey = `content:activity:${userId || "public"}:${targetYear}`;
 
-      if (cached) {
-        return JSON.parse(cached);
+      // 尝试从缓存获取，如果失败则直接从数据库查询
+      try {
+        const cached = await this.redisService.get(cacheKey);
+        console.log("Redis缓存检查完成");
+        if (cached) {
+          console.log("从缓存获取活动数据成功");
+          return JSON.parse(cached);
+        }
+      } catch (error) {
+        console.error("Redis缓存获取失败:", error);
       }
-    } catch (error) {
-      console.error("Redis缓存获取失败:", error);
-    }
 
-    // 按日期分组统计
-    const activityMap = new Map<string, number>();
+      // 按日期分组统计
+      const activityMap = new Map<string, number>();
 
-    // 查询文章，根据用户ID过滤
-    const articleQuery: any = {
-      select: ["createdAt"],
-      order: { createdAt: "DESC" },
-    };
-    if (userId) {
-      articleQuery.where = { author: { id: userId } };
-    }
-    const articles = await this.articleRepository.find(articleQuery);
-    articles.forEach((article) => {
-      const date = article.createdAt.toISOString().split("T")[0];
-      activityMap.set(date, (activityMap.get(date) || 0) + 1);
-    });
+      // 查询文章，根据用户ID过滤
+      try {
+        console.log("开始查询文章数据 - userId:", userId);
+        // 直接使用QueryBuilder进行查询，确保正确过滤用户ID
+        const queryBuilder = this.articleRepository
+          .createQueryBuilder("article")
+          .select(["article.createdAt", "article.authorId"])
+          .orderBy("article.createdAt", "DESC");
 
-    // 查询音乐，根据用户ID过滤
-    const musicQuery: any = {};
-    if (userId) {
-      musicQuery.userId = userId;
-    }
-    const music = await this.musicService.findAll(musicQuery);
-    music.forEach((item) => {
-      const date = item.createdAt.toISOString().split("T")[0];
-      activityMap.set(date, (activityMap.get(date) || 0) + 1);
-    });
+        if (userId) {
+          queryBuilder.where("article.authorId = :userId", { userId });
+        }
 
-    // 查询图片，根据用户ID过滤
-    const imageQuery: any = {};
-    if (userId) {
-      imageQuery.userId = userId;
-    }
-    const images = await this.imageService.findAll(imageQuery);
-    images.forEach((item) => {
-      const date = item.createdAt.toISOString().split("T")[0];
-      activityMap.set(date, (activityMap.get(date) || 0) + 1);
-    });
+        const articles = await queryBuilder.getMany();
+        console.log(
+          "文章查询完成，数量:",
+          articles.length,
+          "文章数据:",
+          articles,
+        );
 
-    // 查询视频，根据用户ID过滤
-    const videoQuery: any = {};
-    if (userId) {
-      videoQuery.userId = userId;
-    }
-    const videos = await this.videoService.findAll(videoQuery);
-    videos.forEach((item) => {
-      const date = item.createdAt.toISOString().split("T")[0];
-      activityMap.set(date, (activityMap.get(date) || 0) + 1);
-    });
-
-    // 生成指定年份的所有日期数据
-    const activityData = [];
-
-    // 生成指定年份的所有日期（1月1日到12月31日）
-    for (let month = 0; month < 12; month++) {
-      // 计算当月天数
-      const daysInMonth = new Date(targetYear, month + 1, 0).getDate();
-
-      // 生成当月每一天
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(targetYear, month, day);
-        const formattedDate = date.toISOString().split("T")[0];
-        const count = activityMap.get(formattedDate) || 0;
-
-        activityData.push({
-          date: formattedDate,
-          count,
-          description: count > 0 ? `${count} 条内容` : "无内容",
+        articles.forEach((article) => {
+          console.log(
+            "处理文章 - authorId:",
+            article.authorId,
+            "createdAt:",
+            article.createdAt,
+          );
+          const date = article.createdAt.toISOString().split("T")[0];
+          console.log("文章日期:", date);
+          activityMap.set(date, (activityMap.get(date) || 0) + 1);
+          console.log("当前日期计数:", activityMap.get(date));
         });
+        console.log(
+          "文章处理完成，activityMap:",
+          Array.from(activityMap.entries()),
+        );
+      } catch (error) {
+        console.error("文章查询失败:", error);
       }
-    }
 
-    // 构建统一响应格式
-    const response = {
-      code: 200,
-      message: "获取活动数据成功",
-      data: activityData,
-    };
+      // 查询音乐，根据用户ID过滤
+      try {
+        console.log("开始查询音乐数据");
+        const musicQuery: any = {};
+        if (userId) {
+          musicQuery.userId = userId;
+        }
+        const music = await this.musicService.findAll(musicQuery);
+        console.log("音乐查询完成，数量:", music.length);
+        music.forEach((item) => {
+          const date = item.createdAt.toISOString().split("T")[0];
+          activityMap.set(date, (activityMap.get(date) || 0) + 1);
+        });
+      } catch (error) {
+        console.error("音乐查询失败:", error);
+      }
 
-    // 尝试缓存结果，如果失败则忽略
-    try {
-      // 缓存12小时
-      await this.redisService.set(cacheKey, JSON.stringify(response), 43200);
+      // 查询图片，根据用户ID过滤
+      try {
+        console.log("开始查询图片数据");
+        const imageQuery: any = {};
+        if (userId) {
+          imageQuery.userId = userId;
+        }
+        const images = await this.imageService.findAll(imageQuery);
+        console.log("图片查询完成，数量:", images.length);
+        images.forEach((item) => {
+          const date = item.createdAt.toISOString().split("T")[0];
+          activityMap.set(date, (activityMap.get(date) || 0) + 1);
+        });
+      } catch (error) {
+        console.error("图片查询失败:", error);
+      }
+
+      // 查询视频，根据用户ID过滤
+      try {
+        console.log("开始查询视频数据");
+        const videoQuery: any = {};
+        if (userId) {
+          videoQuery.userId = userId;
+        }
+        const videos = await this.videoService.findAll(videoQuery);
+        console.log("视频查询完成，数量:", videos.length);
+        videos.forEach((item) => {
+          const date = item.createdAt.toISOString().split("T")[0];
+          activityMap.set(date, (activityMap.get(date) || 0) + 1);
+        });
+      } catch (error) {
+        console.error("视频查询失败:", error);
+      }
+
+      // 生成指定年份的所有日期数据
+      const activityData = [];
+
+      // 生成指定年份的所有日期（1月1日到12月31日）
+      for (let month = 0; month < 12; month++) {
+        // 计算当月天数
+        const daysInMonth = new Date(targetYear, month + 1, 0).getDate();
+
+        // 生成当月每一天
+        for (let day = 1; day <= daysInMonth; day++) {
+          // 使用UTC时间创建日期对象，避免时区问题
+          const date = new Date(Date.UTC(targetYear, month, day));
+          const formattedDate = date.toISOString().split("T")[0];
+          console.log("生成日期:", formattedDate);
+          const count = activityMap.get(formattedDate) || 0;
+          console.log("日期计数:", count);
+
+          activityData.push({
+            date: formattedDate,
+            count,
+            description: count > 0 ? `${count} 条内容` : "无内容",
+          });
+        }
+      }
+
+      // 构建统一响应格式
+      const response = {
+        code: 200,
+        message: "获取活动数据成功",
+        data: activityData,
+      };
+
+      // 尝试缓存结果，如果失败则忽略
+      try {
+        // 缓存12小时
+        await this.redisService.set(cacheKey, JSON.stringify(response), 43200);
+        console.log("Redis缓存设置成功");
+      } catch (error) {
+        console.error("Redis缓存设置失败:", error);
+      }
+
+      // 返回统一的响应格式
+      console.log("活动数据获取完成，返回结果");
+      return response;
     } catch (error) {
-      console.error("Redis缓存设置失败:", error);
+      console.error("getActivityData 函数执行失败:", error);
+      // 返回错误响应
+      return {
+        code: 500,
+        message: "获取活动数据失败",
+        data: null,
+      };
     }
-
-    // 返回统一的响应格式
-    return response;
   }
 
   /**
@@ -417,7 +480,7 @@ export class ArticleService {
    */
   async toggleLike(
     userId: number,
-    articleId: number
+    articleId: number,
   ): Promise<{ isLiked: boolean; likes: number }> {
     // 查找文章
     const article = await this.articleRepository.findOne({
@@ -473,7 +536,7 @@ export class ArticleService {
    */
   async toggleCollect(
     userId: number,
-    articleId: number
+    articleId: number,
   ): Promise<{ isCollected: boolean; collects: number }> {
     // 查找文章，确保文章存在
     const article = await this.articleRepository.findOneOrFail({
@@ -519,7 +582,7 @@ export class ArticleService {
    */
   async checkCollectStatus(
     userId: number,
-    articleId: number
+    articleId: number,
   ): Promise<boolean> {
     const collect = await this.articleCollectRepository.findOne({
       where: { userId, articleId },

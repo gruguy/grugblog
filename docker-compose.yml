@@ -6,7 +6,7 @@ services:
     build: ./frontend
     container_name: blog-frontend
     ports:
-      - "80:80"
+      - "3900:3900"
     depends_on:
       - backend
     networks:
@@ -23,7 +23,7 @@ services:
     build: ./admin
     container_name: blog-admin
     ports:
-      - "81:80"
+      - "3991:3900"
     depends_on:
       - backend
     networks:
